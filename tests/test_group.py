@@ -16,7 +16,7 @@ class GroupTestCase(ActivitiTestCase):
         }
         mock.post(
             self.activiti.groups_url(),
-            content=json.dumps(fake_group),
+            json=fake_group,
             status_code=codes.created,
         )
         group = self.activiti.create_group('group1', 'Group1', 'Type')
@@ -27,7 +27,7 @@ class GroupTestCase(ActivitiTestCase):
         fake_group = {}
         mock.post(
             self.activiti.groups_url(),
-            content=json.dumps(fake_group),
+            json=fake_group,
             status_code=codes.bad_request,
         )
         with self.assertRaises(exceptions.GroupMissingID):
@@ -85,7 +85,7 @@ class GroupTestCase(ActivitiTestCase):
         mock.get(
             self.activiti.groups_url(),
             status_code=codes.ok,
-            content=json.dumps(fake_groups),
+            json=fake_groups,
         )
 
         result = self.activiti.groups()
@@ -101,7 +101,7 @@ class GroupTestCase(ActivitiTestCase):
         mock.put(
             self.activiti.group_url('group1'),
             status_code=codes.ok,
-            content=json.dumps(update)
+            json=update
         )
         self.assertEqual(self.activiti.group_update('group1', update), update)
 
@@ -139,7 +139,7 @@ class GroupTestCase(ActivitiTestCase):
         mock.post(
             self.endpoint_group_members(group_id),
             status_code=codes.created,
-            content=json.dumps(fake_response)
+            json=fake_response
         )
 
         response = self.activiti.group_add_member(group_id, user_id)

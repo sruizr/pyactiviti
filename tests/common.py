@@ -1,10 +1,7 @@
 import unittest
-from pyactiviti import pyactiviti
+from pyactiviti.base import RestConnection
 
 ACTIVITI_AUTH = ('kermit', 'kermit')
 ACTIVITI_SERVICE = 'http://localhost:8080/activiti-rest'
 
-class ActivitiTestCase(unittest.TestCase):
-    def setUp(self):
-        self.activiti = pyactiviti.Activiti(ACTIVITI_SERVICE, auth=ACTIVITI_AUTH)
-        self.to_endpoint = self.activiti._to_endpoint
+rest_connection = RestConnection(ACTIVITI_SERVICE, auth=ACTIVITI_AUTH)

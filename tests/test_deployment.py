@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import contextlib
-import StringIO
 
 from requests.status_codes import codes
 import requests_mock
@@ -33,7 +32,7 @@ class DeploymentTestCase(ActivitiTestCase):
         mock.get(
             self.activiti.deployments_url(),
             status_code=codes.ok,
-            content=json.dumps(fake_deployments)
+            json=fake_deployments
         )
 
         response = self.activiti.deployments()
@@ -52,7 +51,7 @@ class DeploymentTestCase(ActivitiTestCase):
 }
         mock.get(
             self.activiti.deployment_url(10),
-            content=json.dumps(fake_deployment),
+            json=fake_deployment,
             status_code=codes.ok
         )
 

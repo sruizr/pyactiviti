@@ -2,17 +2,26 @@
 import json
 from requests.status_codes import codes
 import requests_mock
+import .common as c
+from ..user import User
 
-from .common import ActivitiTestCase
+
 from pyactiviti import exceptions
 
-class UserTestCase(ActivitiTestCase):
+
+class A_User:
+
+    def setup_method(self, method):
+        self.user = User('user1')
+        self.user.rest_connection = c.rest_connection
+
     @requests_mock.mock()
     def test_user_does_not_exist(self, mock):
         mock.get(
-            self.activiti.user_url(('user1')),
+            self.user.get_by_id(('user1')),
             status_code=codes.not_found
         )
+
 
         self.assertFalse(self.activiti.user_exists('user1'))
 
@@ -31,7 +40,7 @@ class UserTestCase(ActivitiTestCase):
         fake_user = self.fake_user(user_id)
         mock.get(
             self.activiti.user_url(user_id),
-            content=json.dumps(fake_user),
+            json=fake_user,
             status_code=codes.ok
         )
         remote_user = self.activiti.get_user(user_id)
@@ -61,8 +70,7 @@ class UserTestCase(ActivitiTestCase):
         mock.get(
             self.activiti.users_url(),
             headers={'Content-Type': 'application/json'},
-            status_code=codes.ok,
-            content=json.dumps(fake_users)
+            status_code=codes.ok, json=fake_users
         )
 
         result = self.activiti.users()['data']
@@ -74,7 +82,7 @@ class UserTestCase(ActivitiTestCase):
         fake_user = self.fake_user('user1')
         mock.post(
             self.activiti.users_url(),
-            content=json.dumps(fake_user),
+            json= fake_user,
             status_code=codes.created,
         )
 
@@ -87,7 +95,7 @@ class UserTestCase(ActivitiTestCase):
         mock.post(
             self.activiti.users_url(),
             status_code=codes.conflict,
-            content=json.dumps({'exception': 'Exception'})
+            json={'exception': 'Exception'}
         )
 
         with self.assertRaises(exceptions.UserAlreadyExists):
@@ -131,7 +139,7 @@ class UserTestCase(ActivitiTestCase):
         mock.put(
             self.activiti.user_url('user1'),
             status_code=codes.ok,
-            content=json.dumps(update),
+            json=update,
         )
 
         response = self.activiti.user_update('user1', update)
