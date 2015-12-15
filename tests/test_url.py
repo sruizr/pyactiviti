@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .common import ActivitiTestCase
 
+
 class UrlTestCase(ActivitiTestCase):
     def test_user_url(self):
         user_id = 'user1'

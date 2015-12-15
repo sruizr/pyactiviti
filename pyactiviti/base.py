@@ -12,7 +12,7 @@ def check_parameters(fields, args):
     return arguments
 
 
-class RestConnection:
+class ActivitiEngine:
 
     def __init__(self, endpoint, auth=('kermit', 'kermit')):
         self.endpoint = endpoint
@@ -21,6 +21,9 @@ class RestConnection:
         self.session = requests.Session()
         self.session.auth = self.auth
         self.session.headers.update({'content-type': 'application/json'})
+        self.identity_service = None
+        self.runtime_service = None
+        self.task_service = None
 
     def delete(self, service):
         response = self.session.delete(service)
@@ -48,6 +51,22 @@ class RestConnection:
 
     def to_endpoint(self, *args):
         return '/'.join([self.endpoint, 'service'] + list(str(arg) for arg in args))
+
+
+class Service:
+    pass
+
+
+class Query:
+
+    def count():
+        pass
+
+    def list():
+        pass
+
+    def single_result():
+        pass
 
 
 class ResponseError(Exception):

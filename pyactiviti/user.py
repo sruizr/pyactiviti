@@ -4,7 +4,7 @@ USERS_FIELDS = [
     'sort'
 ]
 
-import .base as b
+from . import base as b
 
 class User:
 
@@ -15,8 +15,7 @@ class User:
         self.firstname = firstname
         self.lastname = lastname
         self.rest_connection = None
-
-    user_url = lambda self, id: self.users_url(id)
+        self.user_url = lambda self, id: self.users_url(id)
 
     def users_url(self, *args):
         return self.rest_connection.to_endpoint('identity', 'users', *args)
@@ -24,7 +23,6 @@ class User:
     def exists(self, login):
         response = self.rest_connection.get(self.user_url(login))
         return response.status_code == codes.ok
-
 
     def create(self, login, email, password, firstname=None, lastname=None):
         user = {
@@ -61,7 +59,7 @@ class User:
         elif response.status_code == codes.not_found:
             raise UserNotFound()
 
-    @staticmethod
+    @classmethod
     def get_by_id(cls, id):
         response = self.rest_connection.get(self.user_url(id))
         if response.status_code == codes.ok:
@@ -69,7 +67,7 @@ class User:
         raise UserNotFound()
 
 
-    @staticmethod
+    @classmethod
     def query_users(self, **parameters):
         params = b.check_parameters(USERS_FIELDS, parameters)
 
@@ -78,7 +76,7 @@ class User:
             return response.json()
         raise NotImplementedError()
 
-    @staticmethod
+    @classmethod
     def get_users_member_of(self, group):
         return self.users(memberOfGroups=group)
 
