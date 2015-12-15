@@ -1,5 +1,5 @@
-from .base import Service
-
+from pyactiviti.base import Service
+import json
 
 class User:
 
@@ -19,20 +19,31 @@ class Group:
         self.type = None
 
 
-class UserQuery(Query):
-    pass
+# class UserQuery(Query):
+#     pass
 
 
 class IdentityService(Service):
 
     def __init__(self, engine):
-        pass
+        Service.__init__(self, engine)
+        self.endpoint = self.endpoint + "/identity"
 
     def new_user(self, user_id):
         return User(user_id)
 
-    def load_user(self, user_id):
-        pass
+    def load_user(self, user):
+        try:
+            json_user = self.get(self.to_endpoint("users", user.id))
+            dict_user = json.load(json_user)
+
+            user.first_name = dict_user["firstName"]
+            user.last_name = dict_user["lastName"]
+            user.email = dict_user["email"]
+        except Exception as e:
+            raise e
+
+        return user
 
     def save_user(self, user):
         pass

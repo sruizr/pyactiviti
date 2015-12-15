@@ -1,6 +1,5 @@
 import requests
 import json
-from requests.status_codes import codes
 
 
 def check_parameters(fields, args):
@@ -12,24 +11,17 @@ def check_parameters(fields, args):
     return arguments
 
 
-class ActivitiEngine:
+class Service:
 
-    def __init__(self, endpoint, auth=('kermit', 'kermit')):
-        self.endpoint = endpoint
-        self.auth = auth
-
-        self.session = requests.Session()
-        self.session.auth = self.auth
-        self.session.headers.update({'content-type': 'application/json'})
-        self.identity_service = None
-        self.runtime_service = None
-        self.task_service = None
+    def __init__(self, engine):
+        self.endpoint = engine.endpoint
+        self.session = engine.session
 
     def delete(self, service):
         response = self.session.delete(service)
-        if response.status_code == codes.no_content:
+        if response.status_code == requests.codes.no_content:
             return True
-        elif response.status_code == codes.not_found:
+        elif response.status_code == requests.codes.not_found:
             raise NotFound()
 
     def post(self, service, values=None):
@@ -39,10 +31,10 @@ class ActivitiEngine:
 
     def get(self, service, params=None):
         response = self.session.get(service, params=params)
-        if response.status_code == codes.ok:
+        if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            raise RequestError(response.status_code)
+            raise ResponseError(response.status_code)
 
     def put(self, service, values=None):
         if values:
@@ -51,10 +43,6 @@ class ActivitiEngine:
 
     def to_endpoint(self, *args):
         return '/'.join([self.endpoint, 'service'] + list(str(arg) for arg in args))
-
-
-class Service:
-    pass
 
 
 class Query:

@@ -18,7 +18,6 @@ class A_test:
         responses.add(responses.GET, 'http://twitter.com/api/1/foobar',
                       json={"error": "not found"}, status=404)
 
-        responses.add(responses)
 
         resp = requests.get('http://twitter.com/api/1/foobar')
         assert resp.json() == {"error": "not found"}
