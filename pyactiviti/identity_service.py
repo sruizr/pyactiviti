@@ -19,13 +19,17 @@ class Group:
         self.type = None
 
 
+class UserQuery(Query):
+    pass
+
+
 class IdentityService(Service):
 
     def __init__(self, engine):
         pass
 
     def new_user(self, user_id):
-        pass
+        return User(user_id)
 
     def load_user(self, user_id):
         pass
@@ -39,11 +43,17 @@ class IdentityService(Service):
     def update_user(self, user):
         pass
 
+    def get_user_info(self, key):
+        pass
+
+    def set_user_info(self, key):
+        pass
+
     def create_user_query(self):
         pass
 
     def new_group(self, group_id):
-        pass
+        return Group(group_id)
 
     def save_group(self, group):
         pass

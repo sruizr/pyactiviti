@@ -1,5 +1,5 @@
 wheel==0.23.0
 requests
-requests-mock
+responses
 sphinx
 pytest
