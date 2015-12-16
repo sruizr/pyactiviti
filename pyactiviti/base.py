@@ -1,5 +1,6 @@
 import requests
 import json
+import pdb
 
 
 def check_parameters(fields, args):
@@ -42,7 +43,7 @@ class Service:
         return self.session.put(service, data=values)
 
     def to_endpoint(self, *args):
-        return '/'.join([self.endpoint, 'service'] + list(str(arg) for arg in args))
+        return '/'.join([self.endpoint] + list(str(arg) for arg in args))
 
 
 class Query:
@@ -60,3 +61,21 @@ class Query:
 class ResponseError(Exception):
     def __init__(self, status_code):
         self.status_code = status_code
+
+
+class UpdatedSimultaneous(Exception):
+    pass
+
+
+class NotFound(Exception):
+    pass
+
+
+class MissingID(Exception):
+    pass
+
+
+class AlreadyExists(Exception):
+    pass
+
+

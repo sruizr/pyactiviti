@@ -5,6 +5,7 @@ import requests.status_codes as codes
 
 import responses
 import pytest
+import pdb
 
 
 class A_IdentityService:
@@ -35,8 +36,9 @@ class A_IdentityService:
     @responses.activate
     def should_load_existing_user(self):
 
-        responses.add(responses.GET, self.IDENTITY_URL + "user1",
-                      json=self.fake_user("user1"), status=404)
+        url = self.IDENTITY_URL + "user1"
+        responses.add(responses.GET, url,
+                      json=self.fake_user("user1"), status=200)
 
         user = ids.User("user1")
         user = self.identity_service.load_user(user)
@@ -47,5 +49,18 @@ class A_IdentityService:
         assert user.last_name == fake_user["lastName"]
         assert user.email == fake_user["email"]
 
+    @responses.activate
+    def should_raise_exception_loading_unexisting_user(self):
+        url = self.IDENTITY_URL + "user1"
+        responses.add(responses.GET, url, status=404)
+        user = ids.User("user1")
 
+        try:
+            user = self.identity_service.load_user(user)
+            pytest.fails("Exception should be raised")
+        except ids.UserNotFound:
+            pass
 
+    @responses.activate
+    def should_save_new_user(self):
+        url= self.IDENTITY_URL +

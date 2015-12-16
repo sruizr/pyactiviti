@@ -1,5 +1,11 @@
-from pyactiviti.base import Service
+from pyactiviti.base import Service, ResponseError
+from requests.status_code import codes
+
+
 import json
+
+import pdb
+
 
 class User:
 
@@ -21,6 +27,23 @@ class Group:
 
 # class UserQuery(Query):
 #     pass
+class UserNotFound(Exception):
+    pass
+
+
+class UserAlreadyExists(AlreadyExists):
+    pass
+
+
+class UserMissingID(MissingID):
+    pass
+
+
+class UserUpdatedSimultaneous(UpdatedSimultaneous):
+    pass
+
+class UserAlreadyMember(Exception):
+    pass
 
 
 class IdentityService(Service):
@@ -34,31 +57,53 @@ class IdentityService(Service):
 
     def load_user(self, user):
         try:
-            json_user = self.get(self.to_endpoint("users", user.id))
-            dict_user = json.load(json_user)
-
+            dict_user = self.get(self.to_endpoint("users", user.id))
             user.first_name = dict_user["firstName"]
             user.last_name = dict_user["lastName"]
             user.email = dict_user["email"]
-        except Exception as e:
-            raise e
+        except ResponseError as e:
+            if e.status_code == 404:
+                raise UserNotFound()
+            else:
+                raise e
 
         return user
 
     def save_user(self, user):
-        pass
+        json_user = {
+            'id': user.id,
+            'email': user.email,
+            'password': user.pasword,
+            'firstName': user.first_name,
+            'lastName': user.last_name
+        }
+
+        try:
+            response = self.rest_connection.post(self.users_url(), json_user)
+        except ResponseError as e:
+            if e.status_code == codes.conflict:
+                raise UserAlreadyExists(response.json()['exception'])
+            elif e.status_code == codes.bad_request:
+                raise UserMissingID()
+
+        return True
 
     def delete_user(self, user):
-        pass
+        try:
+            result = self.rest_connection.delete(self.user_url(login))
+        except ResponseError as e:
+            if e.status_code == codes.not_found:
+                raise UserNotFound()
+
+        return result
 
     def update_user(self, user):
-        pass
-
-    def get_user_info(self, key):
-        pass
-
-    def set_user_info(self, key):
-        pass
+       response = self.rest_connection.put(self.user_url(user_id), values=values)        if response.status_code == codes.ok:
+            return response.json()
+        elif response.status_code == codes.not_found:
+            raise UserNotFound()
+        elif response.status_code == codes.conflict:
+            raise UserUpdatedSimultaneous()
 
     def create_user_query(self):
         pass
