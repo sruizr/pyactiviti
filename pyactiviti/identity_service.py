@@ -90,11 +90,35 @@ class UserQuery(Query):
         return self
 
     def member_of_group(self, group):
-        self.parameters["memberOfGroup"] = group
+        self.parameters["memberOfGroup"] = group.id
         return self
 
-    def potential_starter(self, process_id):
-        self.parameters["potentialStarter"] = process_id
+    def potential_starter(self, process_definition):
+        self.parameters["potentialStarter"] = process_definition.id
+        return self
+
+    def list(self):
+        dict_result = super(UserQuery, self).list()
+        user_list = []
+        for dict_user in dict_result:
+            user = User(dict_user["id"])
+            JavaDictMapper.update_object(user, dict_user)
+            user_list.append(user)
+
+        return user_list
+
+class GroupQuery(Query):
+
+    def member(self, user):
+        return self
+
+    def group_name(self, name):
+        return self
+
+    def group_type(self, name):
+        return self
+
+    def potential_starters(self, ):
         return self
 
     def list(self):
@@ -181,16 +205,41 @@ class IdentityService(Service):
         return Group(group_id)
 
     def save_group(self, group):
-        pass
+        dict_group = JavaDictMapper.get_dict(group)
 
-    def create_group_query(self):
-        pass
+        self.post(self.to_endpoint("groups"), dict_group)
+
+        return True
 
     def delete_group(self, group):
-        pass
+        try:
+            result = self.delete(self.to_endpoint("groups", group.id))
+        except ResponseError as e:
+            if e.status_code == codes.not_found:
+                raise UserNotFound()
+
+        return True
+
+    def update_group(self, group):
+        dict_group = JavaDictMapper.get_dict(group)
+
+        response = self.put(self.to_endpoint("groups", group.id), dict_group)
+        if response.status_code == codes.ok:
+            return response.json()
+        if response.status_code == codes.not_found:
+            raise GroupNotFound()
+        elif response.status_code == codes.conflict:
+            raise GroupUpdatedSimultaneous()
+
+        return True
 
     def create_membership(self, user, group):
         pass
 
     def delete_membership(self, user, group):
         pass
+
+    def create_group_query(self):
+        pass
+
+

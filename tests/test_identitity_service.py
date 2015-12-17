@@ -36,6 +36,22 @@ class A_IdentityService:
 
         return user
 
+    def get_group(self):
+        group = ids.Group("testGroup")
+        group.name = "Test group"
+        group.type = "Test type"
+
+        return group
+
+    def get_json_group(self):
+        group = """{
+   "id":"testGroup",
+   "name":"Test group",
+   "type":"Test type"
+}"""
+
+        return group
+
     def setup_method(self, method):
 
         activiti_engine = ActivitiEngine(self.ACTIVITI_SERVICE,
@@ -125,6 +141,52 @@ class A_IdentityService:
         assert query.url == self.IDENTITY_URL
         assert type(query) is ids.UserQuery
 
+    def should_give_new_group(self):
+
+        group = self.identity_service.new_group("testGroup")
+        assert type(group) is ids.Group
+        assert group.id == "testGroup"
+
+    @patch("pyactiviti.identity_service.Service.post")
+    def should_save_group(self, mock_post):
+        group = self.get_group()
+        json_group = json.loads(self.get_json_group())
+        url = self.ACTIVITI_SERVICE + "/identity/groups"
+
+        mock_response = Mock()
+        mock_response.json.return_value = json_group
+        mock_response.status_code = 200
+        mock_post.return_value = mock_response
+
+        assert self.identity_service.save_group(group)
+        mock_post.assert_call_with(url, json_group)
+
+    @patch("pyactiviti.identity_service.Service.delete")
+    def should_delete_group(self, mock_delete):
+        url = self.ACTIVITI_SERVICE + "/identity/groups" + "/testGroup"
+        response = Mock()
+        response.status_code = 204
+        mock_delete.return_value = response
+
+        group = self.get_group()
+
+        assert self.identity_service.delete_group(group)
+
+        mock_delete.assert_called_with(url)
+
+    @patch("pyactiviti.identity_service.Service.put")
+    def should_update_group(self, mock_put):
+        url = self.ACTIVITI_SERVICE + "/identity/groups" + "/testGroup"
+        response = Mock()
+        response.status_code = 200
+        json_group = self.get_json_group()
+        mock_put.return_value = response
+
+        group = self.get_group()
+
+        assert self.identity_service.update_group(group)
+        mock_put.assert_called_with(url, json.loads(json_group))
+
 
 class A_UserQuery:
 
@@ -156,13 +218,13 @@ class A_UserQuery:
         self.query.email(name)
         assert query.parameters["email"] == name
 
-        name = "group"
-        self.query.member_of_group(name)
-        assert query.parameters["memberOfGroup"] == name
+        group = ids.Group("groupId")
+        self.query.member_of_group(group)
+        assert query.parameters["memberOfGroup"] == group.id
 
-        name = "processDefinitionId"
-        self.query.potential_starter(name)
-        assert query.parameters["potentialStarter"] == name
+        process_definition = ids.Group("fakeObject")
+        self.query.potential_starter(process_definition)
+        assert query.parameters["potentialStarter"] == process_definition.id
 
     @patch("pyactiviti.identity_service.Query.list")
     def should_list_users(self, mock_list):
@@ -209,3 +271,8 @@ class A_UserQuery:
 
         assert users[1].id == "kermit"
         assert users[2].id == "testuser"
+
+class A_GroupQuery:
+
+    def should_add_parameters(self):
+
