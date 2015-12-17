@@ -1,6 +1,14 @@
-from pyactiviti.base import Service, ResponseError
-from requests.status_code import codes
-
+from pyactiviti.base import (
+                             Service,
+                             Query,
+                             ResponseError,
+                             AlreadyExists,
+                             MissingID,
+                             NotFound,
+                             UpdatedSimultaneous,
+                             JavaDictMapper,
+                             )
+from requests.status_codes import codes
 
 import json
 
@@ -15,6 +23,10 @@ class User:
         self.last_name = None
         self.password = None
         self.email = None
+        self._activiti_version = {}
+
+    def is_syncronized(self):
+        return self._activiti_version == JavaDictMapper.get_dict(self)
 
 
 class Group:
@@ -23,6 +35,9 @@ class Group:
         self.id = id
         self.name = None
         self.type = None
+
+    def is_syncronized(self):
+        return self._activiti_version == JavaDictMapper.get_dict(self)
 
 
 # class UserQuery(Query):
@@ -42,8 +57,55 @@ class UserMissingID(MissingID):
 class UserUpdatedSimultaneous(UpdatedSimultaneous):
     pass
 
+
 class UserAlreadyMember(Exception):
     pass
+
+
+class UserQuery(Query):
+
+    def __init__(self, session, url):
+        Query.__init__(self, session, url)
+
+    def first_name(self, name):
+        if "%" in name:
+            self.parameters["firstNameLike"] = name
+        else:
+            self.parameters["firstName"] = name
+
+        return self
+
+    def email(self, name):
+        if "%" in name:
+            self.parameters["emailLike"] = name
+        else:
+            self.parameters["email"] = name
+        return self
+
+    def last_name(self, name):
+        if "%" in name:
+            self.parameters["lastNameLike"] = name
+        else:
+            self.parameters["lastName"] = name
+        return self
+
+    def member_of_group(self, group):
+        self.parameters["memberOfGroup"] = group
+        return self
+
+    def potential_starter(self, process_id):
+        self.parameters["potentialStarter"] = process_id
+        return self
+
+    def list(self):
+        dict_result = super(UserQuery, self).list()
+        user_list = []
+        for dict_user in dict_result:
+            user = User(dict_user["id"])
+            JavaDictMapper.update_object(user, dict_user)
+            user_list.append(user)
+
+        return user_list
 
 
 class IdentityService(Service):
@@ -57,7 +119,8 @@ class IdentityService(Service):
 
     def load_user(self, user):
         try:
-            dict_user = self.get(self.to_endpoint("users", user.id))
+            json_user = self.get(self.to_endpoint("users", user.id))
+            dict_user = json.loads(json_user)
             user.first_name = dict_user["firstName"]
             user.last_name = dict_user["lastName"]
             user.email = dict_user["email"]
@@ -70,16 +133,12 @@ class IdentityService(Service):
         return user
 
     def save_user(self, user):
-        json_user = {
-            'id': user.id,
-            'email': user.email,
-            'password': user.pasword,
-            'firstName': user.first_name,
-            'lastName': user.last_name
-        }
+
+        dict_user = JavaDictMapper.get_dict(user)
 
         try:
-            response = self.rest_connection.post(self.users_url(), json_user)
+            response = self.post(self.to_endpoint("users"), dict_user)
+            user._activiti_version = user.__dict__
         except ResponseError as e:
             if e.status_code == codes.conflict:
                 raise UserAlreadyExists(response.json()['exception'])
@@ -90,7 +149,8 @@ class IdentityService(Service):
 
     def delete_user(self, user):
         try:
-            result = self.rest_connection.delete(self.user_url(login))
+            result = self.delete(self.to_endpoint("users", user.id))
+            user._activiti_version = {}
         except ResponseError as e:
             if e.status_code == codes.not_found:
                 raise UserNotFound()
@@ -98,15 +158,24 @@ class IdentityService(Service):
         return result
 
     def update_user(self, user):
-       response = self.rest_connection.put(self.user_url(user_id), values=values)        if response.status_code == codes.ok:
-            return response.json()
-        elif response.status_code == codes.not_found:
-            raise UserNotFound()
-        elif response.status_code == codes.conflict:
-            raise UserUpdatedSimultaneous()
+        dict_user = JavaDictMapper.get_dict(user)
+
+        if not user.is_syncronized():
+            response = self.put(self.to_endpoint("users", user.id), dict_user)
+            if response.status_code == codes.ok:
+                return response.json()
+            if response.status_code == codes.not_found:
+                raise UserNotFound()
+            elif response.status_code == codes.conflict:
+                raise UserUpdatedSimultaneous()
+
+            return True
 
     def create_user_query(self):
-        pass
+        query_url = self.to_endpoint("users")
+        user_query = UserQuery(self.session, query_url)
+
+        return user_query
 
     def new_group(self, group_id):
         return Group(group_id)

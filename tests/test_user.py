@@ -107,6 +107,7 @@ class A_User:
             self.activiti.users_url(),
             status_code=codes.bad_request,
         )
+
         with self.assertRaises(exceptions.UserMissingID):
             self.activiti.create_user(None, 'foo@bar.org', 'secret')
 

@@ -15,5 +15,3 @@ class ActivitiEngine:
         self.identity_service = IdentityService(self)
         self.runtime_service = None
         self.task_service = None
-
-
