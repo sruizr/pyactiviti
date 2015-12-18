@@ -1,9 +1,9 @@
 import json
 from pyactiviti.process_engine import ActivitiEngine
 from pyactiviti import identity_service as ids
+import pyactiviti.base as b
 from requests.status_codes import codes
 
-from pyactiviti.base import ResponseError
 from unittest.mock import patch, Mock
 from .base import TestQuery
 
@@ -16,7 +16,7 @@ class A_IdentityService:
     ACTIVITI_SERVICE = "http://localhost:8080/activiti-rest"
     IDENTITY_URL = ACTIVITI_SERVICE + "/identity"
 
-    def get_json_user(self, login):
+    def get_dict_user(self, login):
         user = {
             "id": login,
             "firstName": "Fred",
@@ -24,10 +24,10 @@ class A_IdentityService:
             "email": "no-reply@activiti.org",
             "password": None
             }
-        return json.dumps(user)
+        return user
 
     def get_user(self, login):
-        json_user = json.loads(self.get_json_user(login))
+        json_user = self.get_dict_user(login)
 
         user = ids.User(login)
         user.first_name = json_user["firstName"]
@@ -44,14 +44,13 @@ class A_IdentityService:
 
         return group
 
-    def get_json_group(self):
+    def get_dict_group(self):
         group = """{
    "id":"testGroup",
    "name":"Test group",
    "type":"Test type"
 }"""
-
-        return group
+        return json.dumps(group)
 
     def setup_method(self, method):
 
@@ -59,82 +58,128 @@ class A_IdentityService:
                                          self.ACTIVITI_AUTH)
         self.identity_service = activiti_engine.identity_service
 
-
     # User related services
     def should_supply_new_user(self):
         user = self.identity_service.new_user("user1")
 
         assert user.__class__ == ids.User
 
-    @patch("pyactiviti.identity_service.Service.get")
-    def should_load_existing_user(self, mock_get):
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.load")
+    def should_load_existing_user(self, mock_load):
 
-        mock_get.return_value = self.get_json_user("user1")
         url = self.IDENTITY_URL + "/users/user1"
+        json_user = self.get_dict_user("user1")
+        mock_load.return_value = json_user
 
         user = ids.User("user1")
-        user = self.identity_service.load_user(user)
-        fake_user = self.get_user("user1")
+        self.identity_service.load_user(user)
 
-        mock_get.assert_called_with(url)
-        assert user.id == fake_user.id
-        assert user.first_name == fake_user.first_name
-        assert user.last_name == fake_user.last_name
-        assert user.email == fake_user.email
+        mock_load.assert_called_with(url)
+        assert user.id == json_user["id"]
+        assert user.first_name == json_user["firstName"]
+        assert user.last_name == json_user["lastName"]
+        assert user.email == json_user["email"]
 
-    @patch("pyactiviti.identity_service.Service.get")
-    def should_raise_exception_loading_unexisting_user(self, mock_get):
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.load")
+    def should_raise_exception_when_loading_unexisting_user(self,
+                                                            mock_load):
 
-        url = self.IDENTITY_URL + "/users/user1"
-        mock_get.side_effect = ResponseError(404)
+        mock_load.side_effect = b.NotFound()
+
         user = ids.User("user1")
         try:
-            user = self.identity_service.load_user(user)
-            pytest.fails("Exception should be raised")
+            self.identity_service.load_user(user)
+            pytest.fails("UserNotFound should be fired")
         except ids.UserNotFound:
-            mock_get.assert_called_with(url)
+            assert True
 
-    @patch("pyactiviti.identity_service.Service.post")
-    def should_save_new_user(self, mock_post):
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.create")
+    def should_create_new_user(self, mock_create):
 
         url = self.IDENTITY_URL + "/users"
-
         login = "user1"
-        json_user = self.get_json_user(login)
+        json_user = self.get_dict_user(login)
 
         user = self.get_user(login)
-        assert self.identity_service.save_user(user)
+        self.identity_service.create_user(user)
 
-        dict_user = json.loads(json_user)
-        mock_post.assert_called_with(url, dict_user)
+        mock_create.assert_called_with(url, json_user)
 
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.create")
+    def should_raise_exception_when_creating_user_with_missed_id(self,
+                                                                 mock_create):
+        mock_create.side_effect = b.MissingID()
+
+        user = ids.User("user1")
+        try:
+            self.identity_service.create_user(user)
+            pytest.fails("UserMissingID should be fired")
+        except ids.UserMissingID:
+            assert True
+
+    @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.delete")
     def should_delete_user(self, mock_delete):
         url = self.IDENTITY_URL + "/users/user1"
-        response = Mock()
-        response.status_code = 204
-        mock_delete.return_value = response
 
         user = self.get_user("user1")
-
-        assert self.identity_service.delete_user(user).status_code == 204
-
-        assert user._activiti_version == {}
+        self.identity_service.delete_user(user)
 
         mock_delete.assert_called_with(url)
 
-    @patch("pyactiviti.identity_service.Service.put")
-    def should_update_user(self, mock_put):
-        url = self.IDENTITY_URL + "/users/user1"
-        response = Mock()
-        response.status_code = 200
-        json_user = self.get_json_user("user1")
-        mock_put.return_value = response
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.delete")
+    def should_raise_exception_when_deleting_no_found_user(self,
+                                                           mock_delete):
+        mock_delete.side_effect = b.NotFound()
 
+        user = ids.User("user1")
+        try:
+            self.identity_service.delete_user(user)
+            pytest.fails("UserNotFound should be fired")
+        except ids.UserNotFound:
+            pass
+
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.update")
+    def should_update_user(self, mock_update):
+        url = self.IDENTITY_URL + "/users/user1"
+        json_user = self.get_dict_user("user1")
         user = self.get_user("user1")
 
-        assert self.identity_service.update_user(user)
-        mock_put.assert_called_with(url, json.loads(json_user))
+        self.identity_service.update_user(user)
+
+        mock_update.assert_called_with(url, json_user)
+
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.update")
+    def should_raise_exception_when_updating_unexisting_user(self,
+                                                             mock_update):
+        mock_update.side_effect = b.NotFound()
+
+        user = ids.User("user1")
+        try:
+            self.identity_service.update_user(user)
+            pytest.fails("UserNotFound should be fired")
+        except ids.UserNotFound:
+            pass
+
+    @pytest.mark.current
+    @patch("pyactiviti.identity_service.Service.update")
+    def should_raise_exception_when_updating_simultaneously_user(self,
+                                                                 mock_update):
+        mock_update.side_effect = b.UpdatedSimultaneous()
+
+        user = ids.User("user1")
+        try:
+            self.identity_service.update_user(user)
+            pytest.fails("UserSimu should be fired")
+        except ids.UserUpdatedSimultaneous:
+            pass
 
     @patch("pyactiviti.identity_service.Query.list")
     def should_supply_user_query(self, mock_list):
@@ -145,16 +190,17 @@ class A_IdentityService:
         assert type(query) is ids.UserQuery
 
     # Group related services
-    def should_give_new_group(self):
+    def should_supply_new_group(self):
 
         group = self.identity_service.new_group("testGroup")
         assert type(group) is ids.Group
         assert group.id == "testGroup"
 
-    @patch("pyactiviti.identity_service.Service.post")
-    def should_save_group(self, mock_post):
+
+    @patch("pyactiviti.identity_service.Service.create")
+    def should_create_group(self, mock_post):
         group = self.get_group()
-        json_group = json.loads(self.get_json_group())
+        json_group = json.loads(self.get_dict_group())
         url = self.ACTIVITI_SERVICE + "/identity/groups"
 
         mock_response = Mock()
@@ -165,7 +211,7 @@ class A_IdentityService:
         assert self.identity_service.save_group(group)
         mock_post.assert_called_with(url, json_group)
 
-    @patch("pyactiviti.identity_service.Service.delete")
+    @patch("pyactiviti.identity_service.Service.session.delete")
     def should_delete_group(self, mock_delete):
         url = self.ACTIVITI_SERVICE + "/identity/groups" + "/testGroup"
         response = Mock()
@@ -178,12 +224,12 @@ class A_IdentityService:
 
         mock_delete.assert_called_with(url)
 
-    @patch("pyactiviti.identity_service.Service.put")
+    @patch("pyactiviti.identity_service.Service.session.put")
     def should_update_group(self, mock_put):
         url = self.IDENTITY_URL + "/groups/testGroup"
         response = Mock()
         response.status_code = 200
-        json_group = self.get_json_group()
+        json_group = self.get_dict_group()
         mock_put.return_value = response
 
         group = self.get_group()
@@ -191,7 +237,7 @@ class A_IdentityService:
         assert self.identity_service.update_group(group)
         mock_put.assert_called_with(url, json.loads(json_group))
 
-    @patch("pyactiviti.identity_service.Service.post")
+    @patch("pyactiviti.identity_service.Service.get")
     def should_create_membership(self, mock_post):
         url = self.IDENTITY_URL + "/groups/testGroup/members"
         json_user = """{

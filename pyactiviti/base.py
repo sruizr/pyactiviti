@@ -1,16 +1,9 @@
 import requests
+from requests.status_codes import codes
 import json
 import re
+
 import pdb
-
-
-def check_parameters(fields, args):
-    arguments = {}
-    for item in fields:
-        value = args.pop(item, None)
-        if value:
-            arguments[item] = value
-    return arguments
 
 
 class JavaDictMapper:
@@ -51,14 +44,45 @@ class Service:
         self.endpoint = engine.endpoint
         self.session = engine.session
 
+    def create(self, url, values):
+        if values:
+            values = json.dumps(values)
+        response = self.session.post(url, data=values)
+        if response.status_code == codes.bad_request:
+            raise MissingID()
+        if response.status_code != codes.created:
+            raise UnknownError()
+
+    def update(self, url, values):
+        if values:
+            values = json.dumps(values)
+        response = self.session.put(url, data=values)
+
+        if response.status_code == codes.not_found:
+            raise NotFound()
+        if response.status_code == codes.conflict:
+            raise UpdatedSimultaneous()
+        if response.status_code != codes.ok:
+            raise UnknownError()
+
+    def load(self, url):
+        response = self.session.get(url)
+        if response.status_code == codes.not_found:
+            raise NotFound()
+        if response.status_code != requests.codes.ok:
+            raise UnknownError()
+
+        return response.json()
+
     def delete(self, url):
         response = self.session.delete(url)
-        if response.status_code == requests.codes.no_content:
-            return True
-        elif response.status_code == requests.codes.not_found:
-            raise NotFound()
 
-    def post(self, url, values=None):
+        if response.status_code == requests.codes.not_found:
+            raise NotFound()
+        if response.status_code != codes.no_content:
+            raise UnknownError()
+
+    def _post(self, url, values=None):
         if values:
             values = json.dumps(values)
         return self.session.post(url, data=values)
@@ -70,7 +94,7 @@ class Service:
         else:
             raise ResponseError(response.status_code)
 
-    def put(self, url, values=None):
+    def _put(self, url, values=None):
         if values:
             values = json.dumps(values)
         return self.session.put(url, data=values)
@@ -90,7 +114,8 @@ class Query:
         pass
 
     def list(self):
-        pass
+        response = self.session.get(self.url, params=self.parameters)
+        return response.json()
 
     def single_result(self):
         pass
@@ -108,12 +133,6 @@ class Query:
         self.parameters[name] = obj.id
 
 
-class ResponseError(Exception):
-
-    def __init__(self, status_code):
-        self.status_code = status_code
-
-
 class UpdatedSimultaneous(Exception):
     pass
 
@@ -127,4 +146,8 @@ class MissingID(Exception):
 
 
 class AlreadyExists(Exception):
+    pass
+
+
+class UnknownError(Exception):
     pass

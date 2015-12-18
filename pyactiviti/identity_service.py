@@ -1,16 +1,15 @@
+import json
+from requests.status_codes import codes
+
 from pyactiviti.base import (
                              Service,
                              Query,
-                             ResponseError,
                              AlreadyExists,
                              MissingID,
                              NotFound,
                              UpdatedSimultaneous,
                              JavaDictMapper,
                              )
-from requests.status_codes import codes
-
-import json
 
 import pdb
 
@@ -42,7 +41,7 @@ class Group:
 
 # class UserQuery(Query):
 #     pass
-class UserNotFound(Exception):
+class UserNotFound(NotFound):
     pass
 
 
@@ -145,57 +144,35 @@ class IdentityService(Service):
 
     def load_user(self, user):
         try:
-            json_user = self.get(self.to_endpoint("users", user.id))
-            dict_user = json.loads(json_user)
-            user.first_name = dict_user["firstName"]
-            user.last_name = dict_user["lastName"]
-            user.email = dict_user["email"]
-        except ResponseError as e:
-            if e.status_code == 404:
-                raise UserNotFound()
-            else:
-                raise e
+            json_user = self.load(self.to_endpoint("users", user.id))
+            JavaDictMapper.update_object(user, json_user)
+            return user
+        except NotFound:
+            raise UserNotFound()
 
-        return user
-
-    def save_user(self, user):
-
-        dict_user = JavaDictMapper.get_dict(user)
-
+    def create_user(self, user):
         try:
-            response = self.post(self.to_endpoint("users"), dict_user)
+            dict_user = JavaDictMapper.get_dict(user)
+            self.create(self.to_endpoint("users"), dict_user)
             user._activiti_version = user.__dict__
-        except ResponseError as e:
-            if e.status_code == codes.conflict:
-                raise UserAlreadyExists(response.json()['exception'])
-            elif e.status_code == codes.bad_request:
-                raise UserMissingID()
-
-        return True
+        except MissingID:
+            raise UserMissingID()
 
     def delete_user(self, user):
         try:
-            result = self.delete(self.to_endpoint("users", user.id))
+            self.delete(self.to_endpoint("users", user.id))
             user._activiti_version = {}
-        except ResponseError as e:
-            if e.status_code == codes.not_found:
-                raise UserNotFound()
-
-        return result
+        except NotFound:
+            raise UserNotFound()
 
     def update_user(self, user):
         dict_user = JavaDictMapper.get_dict(user)
-
-        if not user.is_syncronized():
-            response = self.put(self.to_endpoint("users", user.id), dict_user)
-            if response.status_code == codes.ok:
-                return response.json()
-            if response.status_code == codes.not_found:
-                raise UserNotFound()
-            elif response.status_code == codes.conflict:
-                raise UserUpdatedSimultaneous()
-
-            return True
+        try:
+            self.update(self.to_endpoint("users", user.id), dict_user)
+        except NotFound:
+            raise UserNotFound()
+        except UpdatedSimultaneous:
+            raise UserUpdatedSimultaneous()
 
     def create_user_query(self):
         query_url = self.to_endpoint("users")
@@ -206,7 +183,7 @@ class IdentityService(Service):
     def new_group(self, group_id):
         return Group(group_id)
 
-    def save_group(self, group):
+    def create_group(self, group):
         dict_group = JavaDictMapper.get_dict(group)
 
         self.post(self.to_endpoint("groups"), dict_group)

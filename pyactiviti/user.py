@@ -3,12 +3,13 @@ USERS_FIELDS = [
     'lastNameLike', 'emailLike', 'memberOfGroup', 'potentialStarter',
     'sort'
 ]
-
 from . import base as b
+
 
 class User:
 
-    def __init__(self, id, email=None, password=None, firstname=None, lastname=None):
+    def __init__(self, id, email=None, password=None, firstname=None,
+                 lastname=None):
         self.id = id
         self.email = email
         self.password = password

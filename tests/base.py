@@ -19,3 +19,8 @@ class TestQuery:
         query = parameter_method(obj)
         assert query.parameters[parameter_name] == obj.id
         query.parameters.pop(parameter_name)
+
+
+class TestService:
+    def test_exception(self, mock, mock_exception, expected_exception):
+        pass
