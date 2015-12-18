@@ -99,7 +99,7 @@ class Query:
         self.parameters[name] = value
 
     def _add_parameter_with_like(self, name, value):
-        if "%" in name:
+        if "%" in value:
             self.parameters[name + "Like"] = value
         else:
             self.parameters[name] = value

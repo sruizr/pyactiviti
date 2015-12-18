@@ -159,7 +159,7 @@ class A_IdentityService:
         mock_post.return_value = mock_response
 
         assert self.identity_service.save_group(group)
-        mock_post.assert_call_with(url, json_group)
+        mock_post.assert_called_with(url, json_group)
 
     @patch("pyactiviti.identity_service.Service.delete")
     def should_delete_group(self, mock_delete):
@@ -275,4 +275,5 @@ class A_UserQuery:
 class A_GroupQuery:
 
     def should_add_parameters(self):
+        pass
 

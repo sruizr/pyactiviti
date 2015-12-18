@@ -72,29 +72,23 @@ class UserQuery(Query):
         Query.__init__(self, session, url)
 
     def first_name(self, name):
-        self._add_parameter_with_like("firstName") = name
+        self._add_parameter_with_like("firstName", name)
         return self
 
     def email(self, name):
-        if "%" in name:
-            self.parameters["emailLike"] = name
-        else:
-            self.parameters["email"] = name
+        self._add_parameter_with_like("email", name)
         return self
 
     def last_name(self, name):
-        if "%" in name:
-            self.parameters["lastNameLike"] = name
-        else:
-            self.parameters["lastName"] = name
+        self._add_parameter_with_like("lastName", name)
         return self
 
     def member_of_group(self, group):
-        self.parameters["memberOfGroup"] = group.id
+        self._add_parameter("memberOfGroup", group.id)
         return self
 
     def potential_starter(self, process_definition):
-        self.parameters["potentialStarter"] = process_definition.id
+        self._add_parameter("potentialStarter", process_definition.id)
         return self
 
     def list(self):
