@@ -31,7 +31,8 @@ class JavaDictMapper:
     @classmethod
     def update_object(self, obj, java_dict):
         for key in java_dict.keys():
-            setattr(obj, self.to_snake(key), java_dict[key])
+            if key != "url":
+                setattr(obj, self.to_snake(key), java_dict[key])
 
     @classmethod
     def to_snake(self, camel_case):
@@ -85,14 +86,23 @@ class Query:
         self.session = session
         self.parameters = {}
 
-    def count():
+    def count(self):
         pass
 
-    def list():
+    def list(self):
         pass
 
-    def single_result():
+    def single_result(self):
         pass
+
+    def _add_parameter(self, name, value):
+        self.parameters[name] = value
+
+    def _add_parameter_with_like(self, name, value):
+        if "%" in name:
+            self.parameters[name + "Like"] = value
+        else:
+            self.parameters[name] = value
 
 
 class ResponseError(Exception):

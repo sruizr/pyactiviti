@@ -62,17 +62,17 @@ class UserAlreadyMember(Exception):
     pass
 
 
+class GroupNotFound(NotFound):
+    pass
+
+
 class UserQuery(Query):
 
     def __init__(self, session, url):
         Query.__init__(self, session, url)
 
     def first_name(self, name):
-        if "%" in name:
-            self.parameters["firstNameLike"] = name
-        else:
-            self.parameters["firstName"] = name
-
+        self._add_parameter_with_like("firstName") = name
         return self
 
     def email(self, name):
