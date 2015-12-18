@@ -104,6 +104,9 @@ class Query:
         else:
             self.parameters[name] = value
 
+    def _add_parameter_object(self, name, obj):
+        self.parameters[name] = obj.id
+
 
 class ResponseError(Exception):
 

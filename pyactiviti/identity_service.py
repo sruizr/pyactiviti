@@ -101,29 +101,37 @@ class UserQuery(Query):
 
         return user_list
 
+
 class GroupQuery(Query):
 
+    def __init__(self, session, url):
+        Query.__init__(self, session, url)
+
     def member(self, user):
+        self._add_parameter_object("member", user)
         return self
 
     def group_name(self, name):
+        self._add_parameter_with_like("name", name)
         return self
 
     def group_type(self, name):
+        self._add_parameter("type", name)
         return self
 
-    def potential_starters(self, ):
+    def potential_starter(self, process_definition):
+        self._add_parameter_object("potentialStarter", process_definition)
         return self
 
     def list(self):
-        dict_result = super(UserQuery, self).list()
-        user_list = []
-        for dict_user in dict_result:
-            user = User(dict_user["id"])
-            JavaDictMapper.update_object(user, dict_user)
-            user_list.append(user)
+        dict_result = super(GroupQuery, self).list()
+        group_list = []
+        for dict_group in dict_result:
+            group = Group(dict_group["id"])
+            JavaDictMapper.update_object(group, dict_group)
+            group_list.append(group)
 
-        return user_list
+        return group_list
 
 
 class IdentityService(Service):
@@ -228,12 +236,22 @@ class IdentityService(Service):
         return True
 
     def create_membership(self, user, group):
-        pass
+        dict_membership = {"userId": user.id}
+
+        response = self.post(self.to_endpoint("groups", group.id, "members"),
+                             dict_membership)
+        if response.status_code == 201:
+            return True
+        else:
+            return False
 
     def delete_membership(self, user, group):
-        pass
+        response = self.delete(self.to_endpoint("groups", group.id, "members",
+                               user.id))
+        if response.status_code == 204:
+            return True
+        else:
+            return False
 
     def create_group_query(self):
-        pass
-
-
+        return GroupQuery(self.session, self.to_endpoint("groups"))
