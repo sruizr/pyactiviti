@@ -1,4 +1,1 @@
-{
-  "tests/test_identitity_service.py::A_IdentityService::()::should_create_group": true,
-  "tests/test_identitity_service.py::A_IdentityService::()::should_delete_group": true
-}
+{}

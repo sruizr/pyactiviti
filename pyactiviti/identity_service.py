@@ -39,32 +39,6 @@ class Group:
         return self._activiti_version == JavaDictMapper.get_dict(self)
 
 
-# class UserQuery(Query):
-#     pass
-class UserNotFound(NotFound):
-    pass
-
-
-class UserAlreadyExists(AlreadyExists):
-    pass
-
-
-class UserMissingID(MissingID):
-    pass
-
-
-class UserUpdatedSimultaneous(UpdatedSimultaneous):
-    pass
-
-
-class UserAlreadyMember(Exception):
-    pass
-
-
-class GroupNotFound(NotFound):
-    pass
-
-
 class UserQuery(Query):
 
     def __init__(self, session, url):
@@ -144,8 +118,8 @@ class IdentityService(Service):
 
     def load_user(self, user):
         try:
-            json_user = self.load(self.to_endpoint("users", user.id))
-            JavaDictMapper.update_object(user, json_user)
+            dict_user = self.load(self.to_endpoint("users", user.id))
+            JavaDictMapper.update_object(user, dict_user)
             return user
         except NotFound:
             raise UserNotFound()
@@ -177,58 +151,82 @@ class IdentityService(Service):
     def create_user_query(self):
         query_url = self.to_endpoint("users")
         user_query = UserQuery(self.session, query_url)
-
         return user_query
 
     def new_group(self, group_id):
         return Group(group_id)
 
+    def load_group(self, group):
+        try:
+            dict_group = self.load(self.to_endpoint("groups", group.id))
+            JavaDictMapper.update_object(group, dict_group)
+        except NotFound:
+            raise GroupNotFound()
+
     def create_group(self, group):
-        dict_group = JavaDictMapper.get_dict(group)
-
-        self.post(self.to_endpoint("groups"), dict_group)
-
-        return True
+        try:
+            dict_group = JavaDictMapper.get_dict(group)
+            self.create(self.to_endpoint("groups"), dict_group)
+        except MissingID:
+            raise GroupMissingID()
 
     def delete_group(self, group):
         try:
-            result = self.delete(self.to_endpoint("groups", group.id))
-        except ResponseError as e:
-            if e.status_code == codes.not_found:
-                raise UserNotFound()
-
-        return True
+            self.delete(self.to_endpoint("groups", group.id))
+        except NotFound:
+            raise GroupNotFound()
 
     def update_group(self, group):
-        dict_group = JavaDictMapper.get_dict(group)
-
-        response = self.put(self.to_endpoint("groups", group.id), dict_group)
-        if response.status_code == codes.ok:
-            return response.json()
-        if response.status_code == codes.not_found:
+        try:
+            dict_group = JavaDictMapper.get_dict(group)
+            self.update(self.to_endpoint("groups", group.id), dict_group)
+        except NotFound:
             raise GroupNotFound()
-        elif response.status_code == codes.conflict:
+        except UpdatedSimultaneous:
             raise GroupUpdatedSimultaneous()
 
-        return True
-
-    def create_membership(self, user, group):
+    def add_membership(self, user, group):
         dict_membership = {"userId": user.id}
 
-        response = self.post(self.to_endpoint("groups", group.id, "members"),
-                             dict_membership)
-        if response.status_code == 201:
-            return True
-        else:
-            return False
+        self.add(self.to_endpoint("groups", group.id, "members"),
+                 dict_membership)
 
-    def delete_membership(self, user, group):
-        response = self.delete(self.to_endpoint("groups", group.id, "members",
-                               user.id))
-        if response.status_code == 204:
-            return True
-        else:
-            return False
+    def remove_membership(self, user, group):
+        self.remove(self.to_endpoint("groups", group.id, "members",
+                    user.id))
 
     def create_group_query(self):
         return GroupQuery(self.session, self.to_endpoint("groups"))
+
+
+# Exceptions
+class UserNotFound(NotFound):
+    pass
+
+
+class UserAlreadyExists(AlreadyExists):
+    pass
+
+
+class UserMissingID(MissingID):
+    pass
+
+
+class UserUpdatedSimultaneous(UpdatedSimultaneous):
+    pass
+
+
+class UserAlreadyMember(Exception):
+    pass
+
+
+class GroupNotFound(NotFound):
+    pass
+
+
+class GroupMissingID(MissingID):
+    pass
+
+
+class GroupUpdatedSimultaneous(UpdatedSimultaneous):
+    pass

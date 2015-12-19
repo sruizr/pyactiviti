@@ -34,7 +34,7 @@ class JavaDictMapper:
 
     @classmethod
     def to_camel_case(self, snake):
-        first, *rest = snake.split('_')
+        first,*rest = snake.split('_')
         return first + ''.join(word.capitalize() for word in rest)
 
 
@@ -81,6 +81,12 @@ class Service:
             raise NotFound()
         if response.status_code != codes.no_content:
             raise UnknownError()
+
+    def add(self, url, values):
+        pass
+
+    def remove(self, url):
+        pass
 
     def _post(self, url, values=None):
         if values:

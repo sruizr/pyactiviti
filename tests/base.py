@@ -1,4 +1,5 @@
 import pdb
+import pytest
 
 
 class TestQuery:
@@ -23,4 +24,15 @@ class TestQuery:
 
 class TestService:
     def test_exception(self, mock, mock_exception, expected_exception):
+        pass
+
+
+def test_transfer_exception(raised_exception, expected_exception, mock,
+                            method, *args, **wargs):
+    mock.side_effect = raised_exception
+    try:
+        method(*args, **wargs)
+        pytest.fail(expected_exception.__name__ +
+                    " should be fired")
+    except expected_exception:
         pass
