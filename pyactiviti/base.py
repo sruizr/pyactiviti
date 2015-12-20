@@ -45,9 +45,9 @@ class Service:
         self.session = engine.session
 
     def create(self, url, values):
-        if values:
-            values = json.dumps(values)
+        values = json.dumps(values)
         response = self.session.post(url, data=values)
+        # pdb.set_trace()
         if response.status_code == codes.bad_request:
             raise MissingID()
         if response.status_code != codes.created:
