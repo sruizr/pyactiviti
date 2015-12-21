@@ -104,9 +104,9 @@ class Service:
 
 class Query:
 
-    def __init__(self, session, url):
-        self.url = url
-        self.session = session
+    def __init__(self, service):
+        self.url = service.endpoint
+        self.session = service.session
         self.parameters = {}
 
     def count(self):

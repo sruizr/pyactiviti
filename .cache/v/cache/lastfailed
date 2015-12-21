@@ -1,3 +1,1 @@
-{
-  "tests/test_task_service.py::A_Task::()::should_parse_from_dict": true
-}
+{}
