@@ -110,15 +110,14 @@ class GroupQuery(Query):
 class IdentityService(Service):
 
     def __init__(self, engine):
-        Service.__init__(self, engine)
-        self.endpoint = self.endpoint + "/identity"
+        Service.__init__(self, engine, "identity")
 
     def new_user(self, user_id):
         return User(user_id)
 
     def load_user(self, user):
         try:
-            dict_user = self.load(self.to_endpoint("users", user.id))
+            dict_user = self.load("users", user.id)
             JavaDictMapper.update_object(user, dict_user)
             return user
         except NotFound:
@@ -127,14 +126,14 @@ class IdentityService(Service):
     def create_user(self, user):
         try:
             dict_user = JavaDictMapper.get_dict(user)
-            self.create(self.to_endpoint("users"), dict_user)
+            self.create(dict_user, "users")
             user._activiti_version = user.__dict__
         except MissingID:
             raise UserMissingID()
 
     def delete_user(self, user):
         try:
-            self.delete(self.to_endpoint("users", user.id))
+            self.delete("users", user.id)
             user._activiti_version = {}
         except NotFound:
             raise UserNotFound()
@@ -142,14 +141,14 @@ class IdentityService(Service):
     def update_user(self, user):
         dict_user = JavaDictMapper.get_dict(user)
         try:
-            self.update(self.to_endpoint("users", user.id), dict_user)
+            self.update(dict_user, "users", user.id)
         except NotFound:
             raise UserNotFound()
         except UpdatedSimultaneous:
             raise UserUpdatedSimultaneous()
 
     def create_user_query(self):
-        query_url = self.to_endpoint("users")
+        query_url = self._to_endpoint("users")
         user_query = UserQuery(self.session, query_url)
         return user_query
 
@@ -158,7 +157,7 @@ class IdentityService(Service):
 
     def load_group(self, group):
         try:
-            dict_group = self.load(self.to_endpoint("groups", group.id))
+            dict_group = self.load("groups", group.id)
             JavaDictMapper.update_object(group, dict_group)
         except NotFound:
             raise GroupNotFound()
@@ -166,20 +165,20 @@ class IdentityService(Service):
     def create_group(self, group):
         try:
             dict_group = JavaDictMapper.get_dict(group)
-            self.create(self.to_endpoint("groups"), dict_group)
+            self.create(dict_group, "groups")
         except MissingID:
             raise GroupMissingID()
 
     def delete_group(self, group):
         try:
-            self.delete(self.to_endpoint("groups", group.id))
+            self.delete("groups", group.id)
         except NotFound:
             raise GroupNotFound()
 
     def update_group(self, group):
         try:
             dict_group = JavaDictMapper.get_dict(group)
-            self.update(self.to_endpoint("groups", group.id), dict_group)
+            self.update(dict_group, "groups", group.id)
         except NotFound:
             raise GroupNotFound()
         except UpdatedSimultaneous:
@@ -187,16 +186,21 @@ class IdentityService(Service):
 
     def add_membership(self, user, group):
         dict_membership = {"userId": user.id}
-
-        self.add(self.to_endpoint("groups", group.id, "members"),
-                 dict_membership)
+        try:
+            self.post_with_json(dict_membership, "groups", group.id, "members")
+        except NotFound:
+            raise NotFound()
+        except UpdatedSimultaneous:
+            raise MemberAlreadyExist()
 
     def remove_membership(self, user, group):
-        self.remove(self.to_endpoint("groups", group.id, "members",
-                    user.id))
+        try:
+            self.delete("groups", group.id, "members", user.id)
+        except NotFound:
+            raise NotFound()
 
     def create_group_query(self):
-        return GroupQuery(self.session, self.to_endpoint("groups"))
+        return GroupQuery(self.session, self._to_endpoint("groups"))
 
 
 # Exceptions
@@ -229,4 +233,7 @@ class GroupMissingID(MissingID):
 
 
 class GroupUpdatedSimultaneous(UpdatedSimultaneous):
+    pass
+
+class MemberAlreadyExist(UpdatedSimultaneous):
     pass

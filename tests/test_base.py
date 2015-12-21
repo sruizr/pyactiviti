@@ -19,8 +19,8 @@ class A_Service:
 
     def setup_method(self, method):
         engine = ActivitiEngine("http://localhost:8080/activiti-rest")
-        self.service = Service(engine)
-        self.url = "http://test/url"
+        self.service = Service(engine, "service")
+        self.url = "http://localhost:8080/activiti-rest/service/test"
         self.dict_object = json.loads(self.get_json_object())
 
     def get_json_object(self):
@@ -39,7 +39,7 @@ class A_Service:
         mock_post.return_value = mock_response
         self.service.session.post = mock_post
 
-        self.service.create(self.url, self.dict_object)
+        self.service.create(self.dict_object, "test")
 
         calls = mock_post.call_args
         assert calls[0][0] == self.url
@@ -53,14 +53,14 @@ class A_Service:
         self.service.session.post = mock_post
 
         with pytest.raises(MissingID):
-            self.service.create(self.url, self.dict_object)
+            self.service.create(self.dict_object, "test")
 
     def should_update_object(self):
         mock_response = Mock(status_code=200)
         mock_put = Mock(return_value=mock_response)
         self.service.session.put = mock_put
 
-        self.service.update(self.url, self.dict_object)
+        self.service.update(self.dict_object, "test")
 
         call = mock_put.call_args
         assert call[0][0] == self.url
@@ -74,7 +74,7 @@ class A_Service:
         self.service.session.put = mock_put
 
         with pytest.raises(NotFound):
-            self.service.update(self.url, self.dict_object)
+            self.service.update(self.dict_object, "test")
 
     def should_raise_exception_when_simultaneous_update(self):
         mock_put = Mock()
@@ -84,7 +84,7 @@ class A_Service:
         self.service.session.put = mock_put
 
         with pytest.raises(UpdatedSimultaneous):
-            self.service.update(self.url, self.dict_object)
+            self.service.update(self.dict_object, "test")
 
     def should_load_a_object(self):
         mock_response = Mock(status_code=200)
@@ -92,7 +92,37 @@ class A_Service:
         mock_get = Mock(return_value=mock_response)
         self.service.session.get = mock_get
 
-        dict_object = self.service.load(self.url)
+        dict_object = self.service.load("test")
 
         mock_get.assert_called_with(self.url)
         assert dict_object == self.dict_object
+
+    def should_raise_exception_when_loading_unexisting_object(self):
+        mock_response = Mock(status_code=404)
+        mock_get = Mock(return_value=mock_response)
+        self.service.session.get = mock_get
+
+        with pytest.raises(NotFound):
+            self.service.load("test")
+
+    def should_delete_a_object(self):
+        mock_response = Mock(status_code=204)
+        mock_del = Mock(return_value=mock_response)
+        self.service.session.delete = mock_del
+
+        self.service.delete("test")
+
+        mock_del.assert_called_with(self.url)
+
+    def should_raise_exception_when_deleting_unexisting_object(self):
+        mock_response = Mock(status_code=404)
+        mock_del = Mock(return_value=mock_response)
+        self.service.session.delete = mock_del
+
+        with pytest.raises(NotFound):
+            self.service.delete("test")
+
+    def should_post_with_json(self):
+        pass
+
+

@@ -1,30 +1,38 @@
-from .base import Service
+from pyactiviti.base import (
+                             Service,
+                             Query,
+                             JavaDictMapper,
+                             )
+import time
 
 
 class Task:
+    def __init__(self, id):
+        self.id = id
 
-    def __init__(self):
+    def parse(self, dict_task):
+        JavaDictMapper.update_object(self, dict_task)
+        self
+        self.create_time = self._convert_to_time(self.create_time)
+        self.due_date = self._convert_to_time(self.due_date)
 
-        self.assignee = None
-        self.execution = None
-        self.id = None
-        self.priority = None
-        self.process_instance = None
-        self.task_definition_key = None
-        self.comments = None
-        self.__sync__ = self.__dict__
+        print(self.create_time)
 
-
-class Comment:
-
-    def __init__(self):
-        self.task = None
-        self.full_message = None
-        self.id = None
-        self.user = None
-
+    def _convert_to_time(self, str):
+        str = str[0:len(str)-9]
+        return time.strptime(str, "%Y-%m-%dT%H:%M:%S")
 
 class TaskService(Service):
 
-    def complete(self, task, user):
-        pass
+    def __init__(self, engine):
+        Service.__init__(engine, "runtime")
+
+    def load_task(self, task):
+        dict_task = self.load("tasks", task.id)
+        task.parse(dict_task)
+
+
+
+
+class TaskQuery(Query):
+    pass

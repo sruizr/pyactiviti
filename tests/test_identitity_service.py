@@ -67,15 +67,13 @@ class A_IdentityService:
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.load")
     def should_load_existing_user(self, mock_load):
-
-        url = self.IDENTITY_URL + "/users/user1"
         json_user = self.get_dict_user("user1")
         mock_load.return_value = json_user
 
         user = ids.User("user1")
         self.identity_service.load_user(user)
 
-        mock_load.assert_called_with(url)
+        mock_load.assert_called_with("users", "user1")
         assert user.id == json_user["id"]
         assert user.first_name == json_user["firstName"]
         assert user.last_name == json_user["lastName"]
@@ -95,14 +93,13 @@ class A_IdentityService:
     @patch("pyactiviti.identity_service.Service.create")
     def should_create_new_user(self, mock_create):
 
-        url = self.IDENTITY_URL + "/users"
         login = "user1"
         json_user = self.get_dict_user(login)
 
         user = self.get_user(login)
         self.identity_service.create_user(user)
 
-        mock_create.assert_called_with(url, json_user)
+        mock_create.assert_called_with(json_user, "users")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.create")
@@ -117,12 +114,10 @@ class A_IdentityService:
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.delete")
     def should_delete_user(self, mock_delete):
-        url = self.IDENTITY_URL + "/users/user1"
-
         user = self.get_user("user1")
         self.identity_service.delete_user(user)
 
-        mock_delete.assert_called_with(url)
+        mock_delete.assert_called_with("users", "user1")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.delete")
@@ -140,13 +135,12 @@ class A_IdentityService:
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.update")
     def should_update_user(self, mock_update):
-        url = self.IDENTITY_URL + "/users/user1"
         json_user = self.get_dict_user("user1")
         user = self.get_user("user1")
 
         self.identity_service.update_user(user)
 
-        mock_update.assert_called_with(url, json_user)
+        mock_update.assert_called_with(json_user, "users", "user1")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.update")
@@ -188,13 +182,12 @@ class A_IdentityService:
     @patch("pyactiviti.identity_service.Service.load")
     def should_load_group(self, mock_load):
         dict_group = self.get_dict_group()
-        url = self.ACTIVITI_SERVICE + "/identity/groups/testGroup"
         mock_load.return_value = dict_group
 
         group = ids.Group("testGroup")
         self.identity_service.load_group(group)
 
-        mock_load.assert_called_with(url)
+        mock_load.assert_called_with("groups", "testGroup")
         assert group.id == "testGroup"
         assert group.name == dict_group["name"]
         assert group.type == dict_group["type"]
@@ -210,13 +203,12 @@ class A_IdentityService:
     @patch("pyactiviti.identity_service.Service.create")
     def should_create_group(self, mock_create):
         dict_group = self.get_dict_group()
-        url = self.ACTIVITI_SERVICE + "/identity/groups"
         mock_create.return_value = dict_group
 
         group = self.get_group()
         self.identity_service.create_group(group)
 
-        mock_create.assert_called_with(url, dict_group)
+        mock_create.assert_called_with(dict_group, "groups")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.create")
@@ -228,13 +220,12 @@ class A_IdentityService:
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.update")
     def should_update_group(self, mock_update):
-        url = self.IDENTITY_URL + "/groups/testGroup"
         dict_group = self.get_dict_group()
 
         group = self.get_group()
         self.identity_service.update_group(group)
 
-        mock_update.assert_called_with(url, dict_group)
+        mock_update.assert_called_with(dict_group, "groups", "testGroup")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.update")
@@ -255,12 +246,11 @@ class A_IdentityService:
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.delete")
     def should_delete_group(self, mock_delete):
-        url = self.ACTIVITI_SERVICE + "/identity/groups" + "/testGroup"
         group = self.get_group()
 
         self.identity_service.delete_group(group)
 
-        mock_delete.assert_called_with(url)
+        mock_delete.assert_called_with("groups", "testGroup")
 
     @pytest.mark.current
     @patch("pyactiviti.identity_service.Service.delete")
@@ -269,9 +259,8 @@ class A_IdentityService:
         test_transfer_exception(b.NotFound(), ids.GroupNotFound, mock_delete,
                                 self.identity_service.delete_group, group)
 
-    @patch("pyactiviti.identity_service.Service.add")
+    @patch("pyactiviti.identity_service.Service.post_with_json")
     def should_add_membership(self, mock_add):
-        url = self.IDENTITY_URL + "/groups/testGroup/members"
         json_user = """{
    "userId":"kermit"
 }"""
@@ -281,9 +270,10 @@ class A_IdentityService:
         group = self.get_group()
         self.identity_service.add_membership(user, group)
 
-        mock_add.assert_called_with(url, dict_user)
+        mock_add.assert_called_with(dict_user, "groups", "testGroup",
+                                    "members")
 
-    @patch("pyactiviti.identity_service.Service.remove")
+    @patch("pyactiviti.identity_service.Service.delete")
     def should_remove_membership(self, mock_remove):
 
         user = self.get_user("kermit")
@@ -291,8 +281,8 @@ class A_IdentityService:
 
         self.identity_service.remove_membership(user, group)
 
-        url = self.IDENTITY_URL + "/groups/testGroup/members/kermit"
-        mock_remove.assert_called_with(url)
+        mock_remove.assert_called_with("groups", "testGroup", "members",
+                                       "kermit")
 
     @patch("pyactiviti.identity_service.Query.list")
     def should_supply_group_query(self, mock_list):

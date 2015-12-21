@@ -40,12 +40,16 @@ class JavaDictMapper:
 
 class Service:
 
-    def __init__(self, engine):
+    def __init__(self, engine, service_url=None):
         self.endpoint = engine.endpoint
+        if service_url:
+            self.endpoint = self.endpoint + "/" + service_url
+
         self.session = engine.session
 
-    def create(self, url, values):
-        values = json.dumps(values)
+    def create(self, obj, *path):
+        url = self._to_endpoint(*path)
+        values = json.dumps(obj)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
         if response.status_code == codes.bad_request:
@@ -53,9 +57,9 @@ class Service:
         if response.status_code != codes.created:
             raise UnknownError()
 
-    def update(self, url, values):
-        if values:
-            values = json.dumps(values)
+    def update(self, obj, *path):
+        url = self._to_endpoint(*path)
+        values = json.dumps(obj)
         response = self.session.put(url, data=values)
 
         if response.status_code == codes.not_found:
@@ -65,7 +69,8 @@ class Service:
         if response.status_code != codes.ok:
             raise UnknownError()
 
-    def load(self, url):
+    def load(self, *path):
+        url = self._to_endpoint(*path)
         response = self.session.get(url)
         if response.status_code == codes.not_found:
             raise NotFound()
@@ -74,39 +79,27 @@ class Service:
 
         return response.json()
 
-    def delete(self, url):
+    def delete(self, *path):
+        url = self._to_endpoint(*path)
         response = self.session.delete(url)
-
         if response.status_code == requests.codes.not_found:
             raise NotFound()
         if response.status_code != codes.no_content:
             raise UnknownError()
 
-    def add(self, url, values):
-        pass
+    def post_with_json(self, values, *path):
+        url = self._to_endpoint(*path)
+        values = json.dumps(obj)
+        response = self.session.post(url, data=values)
+        # pdb.set_trace()
+        if response.status_code == codes.bad_request:
+            raise MissingID()
+        if response.status_code != codes.created:
+            raise UnknownError()
 
-    def remove(self, url):
-        pass
-
-    def _post(self, url, values=None):
-        if values:
-            values = json.dumps(values)
-        return self.session.post(url, data=values)
-
-    def get(self, url, params=None):
-        response = self.session.get(url, params=params)
-        if response.status_code == requests.codes.ok:
-            return response.json()
-        else:
-            raise ResponseError(response.status_code)
-
-    def _put(self, url, values=None):
-        if values:
-            values = json.dumps(values)
-        return self.session.put(url, data=values)
-
-    def to_endpoint(self, *args):
-        return '/'.join([self.endpoint] + list(str(arg) for arg in args))
+    def _to_endpoint(self, *args):
+        return '/'.join([self.endpoint] +
+                        list(str(arg) for arg in args))
 
 
 class Query:
