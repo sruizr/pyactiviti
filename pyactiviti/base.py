@@ -34,16 +34,16 @@ class JavaDictMapper:
 
     @classmethod
     def to_camel_case(self, snake):
-        first,*rest = snake.split('_')
+        first, *rest = snake.split('_')
         return first + ''.join(word.capitalize() for word in rest)
 
 
 class Service:
 
-    def __init__(self, engine, service_url=None):
-        self.endpoint = engine.endpoint
-        if service_url:
-            self.endpoint = self.endpoint + "/" + service_url
+    def __init__(self, engine, url=None):
+        self.rest_url = engine.rest_url
+        if url:
+            self.url = self.rest_url + "/" + url
 
         self.session = engine.session
 
@@ -104,9 +104,10 @@ class Service:
 
 class Query:
 
-    def __init__(self, service):
-        self.url = service.endpoint
-        self.session = service.session
+    def __init__(self, engine, url_path, post=True):
+        self.engine = engine
+        self.url = engine.rest_url + url_path
+        self.session = engine.session
         self.parameters = {}
 
     def count(self):

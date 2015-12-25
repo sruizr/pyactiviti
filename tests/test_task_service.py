@@ -3,10 +3,10 @@ import pyactiviti.task_service as ts
 from pyactiviti.process_engine import ActivitiEngine
 import pyactiviti.base as b
 from unittest.mock import Mock, patch
+from .base import TestQuery
 import pdb
 import pytest
-
-import datetime
+import iso8601
 
 
 class A_Task:
@@ -32,7 +32,7 @@ class A_Task:
   "tenantId" : null
 }"""
         dict_task = json.loads(json_task)
-        ref_time = datetime.datetime(2013, 4, 17, 10, 17, 43)
+        ref_time = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
 
         task = ts.Task("8")
         task.parse(dict_task)
@@ -87,7 +87,7 @@ class A_TaskService:
         return task
 
     def should_has_correct_url_base(self):
-        assert self.task_service.endpoint == "http://localhost:8080/runtime"
+        assert self.task_service.url == "http://localhost:8080/runtime"
 
     @patch("pyactiviti.task_service.Service.load")
     def should_load_task(self, mock_load):
@@ -108,5 +108,64 @@ class A_TaskService:
         with pytest.raises(ts.TaskNotFound):
             self.task_service.load_task(task)
 
-    def should_supply_task_query(self).
+    def should_supply_task_query(self):
+        pass
 
+
+class A_TaskQuery(TestQuery):
+
+    def setup_method(self, method):
+        engine = ActivitiEngine("http://localhost:8080/rest_engine")
+        self.query = ts.TaskQuery(engine)
+
+    def should_be_initialized_with_service(self):
+        assert not self.query.parameters
+        assert self.query.url == "http://localhost:8080/rest_engine/query/tasks"
+
+    def should_add_parameters_to_task(self):
+        fake_object = Mock()
+        fake_object.id = "objectId"
+        self.test_parameter_with_like(self.query.name, "name", "a name")
+        self.test_parameter(self.query.description, "description",
+                            "task description")
+        self.test_parameter_numerical(self.query.priority, "minimumPriority",
+                                      "greater", 12)
+        self.test_parameter(self.query.priority, "priority", 10)
+        self.test_parameter_numerical(self.query.priority, "maximumPriority",
+                                      "less", 10)
+        self.test_parameter_with_like(self.query.assignee, "assignee", "sRuiz")
+
+        q = self.query.assignee(None)
+        assert q.parameters["unassigned"] == True
+        q.parameters.pop("unassigned")
+
+        self.test_parameter_with_like(self.query.owner, "owner", "sRuiz")
+        self.test_parameter(self.query.delegation_state, "delegationState",
+                            "pending")
+        self.test_parameter(self.query.delegation_state, "delegationState",
+                            "resolved")
+        q = self.query.delegation_state("nostate")
+        assert "unassigned" not in q.parameters
+
+        self.test_parameter(self.query.candidate_user, "candidateUser",
+                            "sRuiz")
+        self.test_parameter(self.query.candidate_group, "candidateGroup",
+                            "testGroup")
+        q = self.query.candidate_group("group1", "group2")
+        assert q.parameters["candidateGroups"] == "group1, group2"
+        q.parameters.pop("candidateGroups")
+
+        self.test_parameter(self.query.involved_user, "involvedUser", "sRuiz")
+        self.test_parameter_with_like(self.query.task_definition_key,
+                                      "taskDefinitionKey", "taskKey")
+
+        self.test_parameter_object(self.query.process_instance,
+                                   "processInstanceId", fake_object)
+        self.test_parameter_with_like(self.query.process_instance_business_key,
+                                      "processInstanceBusinessKey", "Bkey")
+        self.test_parameter_with_like(self.query.process_definition_key,
+                                      "processDefinitionKey", "processKey")
+        self.test_parameter_with_like(self.query.process_definition_name,
+                                      "processDefinitionName", "process name")
+        self.test_parameter_object(self.query.execution, "executionId",
+                                   fake_object)
