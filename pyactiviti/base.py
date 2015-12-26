@@ -89,7 +89,7 @@ class Service:
 
     def post_with_json(self, values, *path):
         url = self._to_endpoint(*path)
-        values = json.dumps(obj)
+        values = json.dumps(values)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
         if response.status_code == codes.bad_request:

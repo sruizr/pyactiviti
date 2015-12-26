@@ -121,3 +121,49 @@ class TaskQuery(Query):
     def execution(self, obj):
         self._add_parameter_object("executionId", obj)
         return self
+
+    def created_date(self, value, operator="on"):
+        parameters = {"on": "createdOn", "before": "createdBefore",
+                                "after": "createdAfter"}
+        if operator in parameters:
+            str_date = value.isoformat()
+            self._add_parameter(parameters[operator], str_date)
+        return self
+
+    def due_date(self, value, operator="on"):
+        if value:
+            parameters = {"on": "dueOn", "before": "dueBefore",
+                                    "after": "dueAfter"}
+            if operator in parameters:
+                str_date = value.isoformat()
+                self._add_parameter(parameters[operator], str_date)
+        else:
+            self._add_parameter("withoutDueDate", True)
+        return self
+
+    def exclude_subtasks(self):
+        self._add_parameter("excludeSubTasks", True)
+        return self
+
+    def active(self):
+        self._add_parameter("active", True)
+        return self
+
+    def include_task_local_variables(self):
+        self._add_parameter("includeTaskLocalVariables", True)
+        return self
+
+    def include_process_variables(self):
+        self._add_parameter("includeProcessVariables", True)
+        return self
+
+    def tenant_id(self, value):
+        if value:
+            self._add_parameter_with_like("tenantId", value)
+        else:
+            self._add_parameter("withoutTenantId", True)
+        return self
+
+    def candidate_or_assigned(self, value):
+        self._add_parameter("candidateOrAssigned", value)
+        return self

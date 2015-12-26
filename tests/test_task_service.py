@@ -7,6 +7,7 @@ from .base import TestQuery
 import pdb
 import pytest
 import iso8601
+import datetime
 
 
 class A_Task:
@@ -125,47 +126,91 @@ class A_TaskQuery(TestQuery):
     def should_add_parameters_to_task(self):
         fake_object = Mock()
         fake_object.id = "objectId"
-        self.test_parameter_with_like(self.query.name, "name", "a name")
-        self.test_parameter(self.query.description, "description",
-                            "task description")
-        self.test_parameter_numerical(self.query.priority, "minimumPriority",
-                                      "greater", 12)
-        self.test_parameter(self.query.priority, "priority", 10)
-        self.test_parameter_numerical(self.query.priority, "maximumPriority",
-                                      "less", 10)
-        self.test_parameter_with_like(self.query.assignee, "assignee", "sRuiz")
+        query = self.query
 
-        q = self.query.assignee(None)
+        self.test_parameter_with_like(query.name, "name", "a name")
+        self.test_parameter(query.description, "description",
+                            "task description")
+        self.test_parameter_numerical(query.priority, "minimumPriority",
+                                      "greater", 12)
+        self.test_parameter(query.priority, "priority", 10)
+        self.test_parameter_numerical(query.priority, "maximumPriority",
+                                      "less", 10)
+        self.test_parameter_with_like(query.assignee, "assignee", "sRuiz")
+
+        q = query.assignee(None)
         assert q.parameters["unassigned"] == True
         q.parameters.pop("unassigned")
 
-        self.test_parameter_with_like(self.query.owner, "owner", "sRuiz")
-        self.test_parameter(self.query.delegation_state, "delegationState",
+        self.test_parameter_with_like(query.owner, "owner", "sRuiz")
+        self.test_parameter(query.delegation_state, "delegationState",
                             "pending")
-        self.test_parameter(self.query.delegation_state, "delegationState",
+        self.test_parameter(query.delegation_state, "delegationState",
                             "resolved")
-        q = self.query.delegation_state("nostate")
+        q = query.delegation_state("nostate")
         assert "unassigned" not in q.parameters
 
-        self.test_parameter(self.query.candidate_user, "candidateUser",
+        self.test_parameter(query.candidate_user, "candidateUser",
                             "sRuiz")
-        self.test_parameter(self.query.candidate_group, "candidateGroup",
+        self.test_parameter(query.candidate_group, "candidateGroup",
                             "testGroup")
-        q = self.query.candidate_group("group1", "group2")
+        q = query.candidate_group("group1", "group2")
         assert q.parameters["candidateGroups"] == "group1, group2"
         q.parameters.pop("candidateGroups")
 
-        self.test_parameter(self.query.involved_user, "involvedUser", "sRuiz")
-        self.test_parameter_with_like(self.query.task_definition_key,
+        self.test_parameter(query.involved_user, "involvedUser", "sRuiz")
+        self.test_parameter_with_like(query.task_definition_key,
                                       "taskDefinitionKey", "taskKey")
 
-        self.test_parameter_object(self.query.process_instance,
+        self.test_parameter_object(query.process_instance,
                                    "processInstanceId", fake_object)
-        self.test_parameter_with_like(self.query.process_instance_business_key,
+        self.test_parameter_with_like(query.process_instance_business_key,
                                       "processInstanceBusinessKey", "Bkey")
-        self.test_parameter_with_like(self.query.process_definition_key,
+        self.test_parameter_with_like(query.process_definition_key,
                                       "processDefinitionKey", "processKey")
-        self.test_parameter_with_like(self.query.process_definition_name,
+        self.test_parameter_with_like(query.process_definition_name,
                                       "processDefinitionName", "process name")
-        self.test_parameter_object(self.query.execution, "executionId",
+        self.test_parameter_object(query.execution, "executionId",
                                    fake_object)
+
+        a_date = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
+        q = query.created_date(a_date)
+        assert iso8601.parse_date(q.parameters["createdOn"]) == a_date
+        q.parameters.pop("createdOn")
+
+        q = query.created_date(a_date, "before")
+        assert iso8601.parse_date(q.parameters["createdBefore"]) == a_date
+        q.parameters.pop("createdBefore")
+
+        q = query.created_date(a_date, "after")
+        assert iso8601.parse_date(q.parameters["createdAfter"]) == a_date
+        q.parameters.pop("createdAfter")
+
+        q = query.due_date(None)
+        assert q.parameters.pop("withoutDueDate") == True
+
+        q = query.due_date(a_date)
+        assert iso8601.parse_date(q.parameters["dueOn"]) == a_date
+        q.parameters.pop("dueOn")
+
+        q = query.due_date(a_date, "before")
+        assert iso8601.parse_date(q.parameters["dueBefore"]) == a_date
+        q.parameters.pop("dueBefore")
+
+        q = query.due_date(a_date, "after")
+        assert iso8601.parse_date(q.parameters.pop("dueAfter")) == a_date
+
+        self.test_parameter_flag(query.exclude_subtasks, "excludeSubTasks")
+        self.test_parameter_flag(query.active, "active")
+        self.test_parameter_flag(query.include_task_local_variables,
+                                 "includeTaskLocalVariables")
+        self.test_parameter_flag(query.include_process_variables,
+                                 "includeProcessVariables")
+
+        self.test_parameter_with_like(query.tenant_id, "tenantId", "tenant")
+        query = query.tenant_id(None)
+        assert query.parameters.pop("withoutTenantId") == True
+
+        self.test_parameter(query.candidate_or_assigned, "candidateOrAssigned",
+                            "sRuiz")
+

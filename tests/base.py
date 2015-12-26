@@ -27,6 +27,13 @@ class TestQuery:
         assert query.parameters[parameter_name] == value
         query.parameters.pop(parameter_name)
 
+    def test_parameter_date(self, parameter_method, operators, value):
+            pass
+
+    def test_parameter_flag(self, parameter_method, parameter_name):
+        query = parameter_method()
+        assert query.parameters[parameter_name] == True
+        query.parameters.pop(parameter_name)
 
 class TestService:
     def test_exception(self, mock, mock_exception, expected_exception):
