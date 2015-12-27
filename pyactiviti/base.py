@@ -48,7 +48,7 @@ class Service:
         self.session = engine.session
 
     def create(self, obj, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         values = json.dumps(obj)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
@@ -58,7 +58,7 @@ class Service:
             raise UnknownError()
 
     def update(self, obj, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         values = json.dumps(obj)
         response = self.session.put(url, data=values)
 
@@ -70,7 +70,7 @@ class Service:
             raise UnknownError()
 
     def load(self, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         response = self.session.get(url)
         if response.status_code == codes.not_found:
             raise NotFound()
@@ -80,7 +80,7 @@ class Service:
         return response.json()
 
     def delete(self, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         response = self.session.delete(url)
         if response.status_code == requests.codes.not_found:
             raise NotFound()
@@ -88,7 +88,7 @@ class Service:
             raise UnknownError()
 
     def post_with_json(self, values, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         values = json.dumps(values)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
@@ -109,12 +109,17 @@ class Query:
         self.url = engine.rest_url + url_path
         self.session = engine.session
         self.parameters = {}
+        self.variable_parameter = []
 
     def count(self):
         pass
 
-    def list(self):
+    def list_get(self):
         response = self.session.get(self.url, params=self.parameters)
+        return response.json()
+
+    def list_post(self):
+        response = self.session.post(self.url, data=self.parameters)
         return response.json()
 
     def single_result(self):
@@ -131,6 +136,23 @@ class Query:
 
     def _add_parameter_object(self, name, obj):
         self.parameters[name] = obj.id
+
+    def _add_process_variable(self, name, value, operator="equals"):
+        valid_operators = ("equals", "notEquals", "equalsIgnoreCase",
+                           "notEqualsIgnoreCase", "lessThan", "greaterThan",
+                           "greaterThanOrEquals", "lessThanOrEquals", "like")
+
+        if operator in valid_operators:
+            variable_parameter = {"name": name,
+                                                "value": value,
+                                                "operation": operator}
+            self.variable_parameter.append(variable_parameter)
+        else:
+            raise IncorrectOperator()
+
+
+class IncorrectOperator(Exception):
+    pass
 
 
 class UpdatedSimultaneous(Exception):

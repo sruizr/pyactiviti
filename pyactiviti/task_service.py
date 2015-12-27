@@ -4,6 +4,7 @@ from pyactiviti.base import (
     JavaDictMapper,
     NotFound,
 )
+import json
 import pdb
 import iso8601
 
@@ -13,15 +14,20 @@ class Task:
     def __init__(self, id):
         self.id = id
 
-    def parse(self, dict_task):
-        JavaDictMapper.update_object(self, dict_task)
-        self.create_time = iso8601.parse_date(self.create_time)
-        self.due_date = iso8601.parse_date(self.due_date)
-        self.execution = Task._get_id(self.execution)
-        if self.parent_task:
-            self.parent_task = Task._get_id(self.parent_task)
-        if self.process_instance:
-            self.process_instance = Task._get_id(self.process_instance)
+    @classmethod
+    def parse(cls, dict_task):
+        task = Task(dict_task["id"])
+        JavaDictMapper.update_object(task, dict_task)
+        if hasattr(task, "create_time"):
+            task.create_time = iso8601.parse_date(task.create_time)
+        if hasattr(task, "due_date"):
+            task.due_date = iso8601.parse_date(task.due_date)
+        task.execution = Task._get_id(task.execution)
+        if task.parent_task:
+            task.parent_task = Task._get_id(task.parent_task)
+        if task.process_instance:
+            task.process_instance = Task._get_id(task.process_instance)
+        return task
 
     @staticmethod
     def _get_id(url):
@@ -37,10 +43,13 @@ class TaskService(Service):
     def load_task(self, task):
         try:
             dict_task = self.load("tasks", task.id)
-            task.parse(dict_task)
+            task = Task.parse(dict_task)
         except NotFound:
             raise TaskNotFound()
 
+    def claim(self, task, user):
+        dict_post = {"action": "claim", "assignee": user.id}
+        self.post_with_json(dict_post, "tasks", task.id)
 
 class TaskNotFound(NotFound):
     pass
@@ -167,3 +176,18 @@ class TaskQuery(Query):
     def candidate_or_assigned(self, value):
         self._add_parameter("candidateOrAssigned", value)
         return self
+
+    def list(self):
+        data_request = self.parameters.copy()
+        if self.variable_parameter:
+            data_request["processInstanceVariables"] = self.variable_parameter
+        values = json.dumps(data_request)
+        json_response = self.session.post(self.url, data=values).json()
+        json_task_list = json_response["data"]
+        task_list = []
+        for dict_task in json_task_list:
+            task_list.append( Ta)
+
+        return task
+
+

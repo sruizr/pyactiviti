@@ -35,8 +35,7 @@ class A_Task:
         dict_task = json.loads(json_task)
         ref_time = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
 
-        task = ts.Task("8")
-        task.parse(dict_task)
+        task = ts.Task.parse(dict_task)
         assert task.assignee == "kermit"
         assert task.create_time == ref_time
         assert task.due_date == ref_time
@@ -82,8 +81,7 @@ class A_TaskService:
         return json.loads(json_task)
 
     def get_task(self):
-        task = ts.Task("8")
-        task.parse(self.get_dict_task())
+        task = ts.Task.parse(self.get_dict_task())
 
         return task
 
@@ -111,6 +109,16 @@ class A_TaskService:
 
     def should_supply_task_query(self):
         pass
+
+    @patch("pyactiviti.task_service.Service.post_with_json")
+    def should_claim_a_task(self, mock_post):
+        mock_user = Mock()
+        mock_user.id = "userId"
+        task = self.get_task()
+        self.task_service.claim(task, mock_user)
+
+        dict_post = {"action": "claim", "assignee": "userId"}
+        mock_post.assert_called_with(dict_post, "tasks", task.id)
 
 
 class A_TaskQuery(TestQuery):
@@ -213,4 +221,11 @@ class A_TaskQuery(TestQuery):
 
         self.test_parameter(query.candidate_or_assigned, "candidateOrAssigned",
                             "sRuiz")
+
+    @patch("pyactiviti.task_service.Query.list_post")
+    def should_list_tasks(self, mock_list_post):
+        self.query.list()
+        mock_list_post.return_value = 12
+
+
 
