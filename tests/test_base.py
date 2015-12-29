@@ -5,7 +5,7 @@ from pyactiviti.base import (
                              MissingID,
                              NotFound,
                              UpdatedSimultaneous,
-
+                             Variables,
                              )
 from pyactiviti.process_engine import ActivitiEngine
 
@@ -124,5 +124,34 @@ class A_Service:
 
     def should_post_with_json(self):
         pass
+
+
+class A_Variables_class:
+    def setup_method(self, method):
+        dict_var = """[
+  {
+    "name" : "doubleTaskVar",
+    "scope" : "local",
+    "type" : "double",
+    "value" : 99.99
+  },
+  {
+    "name" : "stringProcVar",
+    "scope" : "global",
+    "type" : "string",
+    "value" : "This is a ProcVariable"
+  }
+]"""
+
+        dict_var = json.loads(dict_var)
+        self.variables = Variables(rest_data=dict_var)
+
+    def should_init_as_dict(self):
+        pass
+
+
+
+
+
 
 

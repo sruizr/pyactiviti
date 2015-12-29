@@ -2,7 +2,7 @@ import requests
 from requests.status_codes import codes
 import json
 import re
-
+from collections import UserDict
 import pdb
 
 
@@ -36,6 +36,19 @@ class JavaDictMapper:
     def to_camel_case(self, snake):
         first, *rest = snake.split('_')
         return first + ''.join(word.capitalize() for word in rest)
+
+
+class Variables(UserDict):
+
+    def __init__(self, rest_variables=None, **kwargs):
+        UserDict.__init__(self, **kwargs)
+        if rest_variables:
+            self.rest_data = rest_variables
+        self.load(rest_dict)
+
+    def load(self, rest_variables):
+        if rest
+        pass
 
 
 class Service:

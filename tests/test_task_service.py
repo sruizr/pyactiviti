@@ -77,6 +77,20 @@ class A_TaskService:
   "taskDefinitionKey" : "theTask",
   "url" : "http://localhost:8182/runtime/tasks/8",
   "tenantId" : null
+  "taskVariables": [
+        {
+          "name": "test",
+          "variableScope": "local",
+          "value": "myTest"
+        }
+      ],
+    "processVariables": [
+        {
+          "name": "processTest",
+          "variableScope": "global",
+          "value": "myProcessTest"
+        }
+      ],
 }"""
         return json.loads(json_task)
 

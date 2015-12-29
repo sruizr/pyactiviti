@@ -11,23 +11,26 @@ import iso8601
 
 class Task:
 
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, **camel_case_data=None):
+        if camel_case_data:
+            self._parse(camel_case_data)
 
-    @classmethod
-    def parse(cls, dict_task):
-        task = Task(dict_task["id"])
-        JavaDictMapper.update_object(task, dict_task)
-        if hasattr(task, "create_time"):
-            task.create_time = iso8601.parse_date(task.create_time)
-        if hasattr(task, "due_date"):
-            task.due_date = iso8601.parse_date(task.due_date)
-        task.execution = Task._get_id(task.execution)
-        if task.parent_task:
-            task.parent_task = Task._get_id(task.parent_task)
-        if task.process_instance:
-            task.process_instance = Task._get_id(task.process_instance)
-        return task
+    def _parse(self, camel_case_data):
+        JavaDictMapper.update_object(self, camel_case_data)
+        if hasattr(self, "create_time"):
+            self.create_time = iso8601.parse_date(self.create_time)
+        if hasattr(self, "due_date"):
+            self.due_date = iso8601.parse_date(self.due_date)
+        self.execution = self._get_id(self.execution)
+        if hasattr(self.parent_self):
+            self.parent_self = self._get_id(self.parent_self)
+        if hasattr(self.process_instance):
+            self.process_instance = self._get_id(self.process_instance)
+        if hasattr(self.task_variables):
+
+        if hasattr(self.process_variables):
+
+
 
     @staticmethod
     def _get_id(url):
