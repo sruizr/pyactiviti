@@ -2,7 +2,7 @@ import requests
 from requests.status_codes import codes
 import json
 import re
-
+from collections import UserDict
 import pdb
 
 
@@ -38,12 +38,50 @@ class JavaDictMapper:
         return first + ''.join(word.capitalize() for word in rest)
 
 
+class Variables(UserDict):
+
+    def __init__(self, rest_data=None, **kwargs):
+        """rest_data is a dictionary with format of Rest variables"""
+        UserDict.__init__(self, **kwargs)
+        self.rest_data = None
+        if rest_data:
+            self.load(rest_data)
+
+    def load(self, rest_data):
+        for variable in rest_data:
+            name = variable["name"]
+            if variable["scope"] == "local":
+                name = name + "_"
+            self.data[name] = variable["value"]
+        self.rest_data = rest_data
+
+    def sync_rest(self):
+        final_data = self.data.copy()
+        final_rest = []
+        for rest_item in self.rest_data:
+            name = rest_item["name"]
+            if rest_item["scope"] == "local":
+                name += "_"
+            if name in final_data:
+                if rest_item["value"] != self.data[name]:
+                    new_item = rest_item.copy()
+                    new_item["value"] = self.data[name]
+                    final_rest.append(new_item)
+
+        for
+
+
+
+
+
+
+
 class Service:
 
-    def __init__(self, engine, service_url=None):
-        self.endpoint = engine.endpoint
-        if service_url:
-            self.endpoint = self.endpoint + "/" + service_url
+    def __init__(self, engine, url=None):
+        self.rest_url = engine.rest_url
+        if url:
+            self.url = self.rest_url + "/" + url
 
         self.session = engine.session
 
@@ -89,7 +127,7 @@ class Service:
 
     def post_with_json(self, values, *path):
         url = self._to_endpoint(*path)
-        values = json.dumps(obj)
+        values = json.dumps(values)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
         if response.status_code == codes.bad_request:
@@ -98,22 +136,28 @@ class Service:
             raise UnknownError()
 
     def _to_endpoint(self, *args):
-        return '/'.join([self.endpoint] +
+        return '/'.join([self.url] +
                         list(str(arg) for arg in args))
 
 
 class Query:
 
-    def __init__(self, service):
-        self.url = service.endpoint
-        self.session = service.session
+    def __init__(self, engine, url_path, post=True):
+        self.engine = engine
+        self.url = engine.rest_url + url_path
+        self.session = engine.session
         self.parameters = {}
+        self.variable_parameter = []
 
     def count(self):
         pass
 
-    def list(self):
+    def list_get(self):
         response = self.session.get(self.url, params=self.parameters)
+        return response.json()
+
+    def list_post(self):
+        response = self.session.post(self.url, data=self.parameters)
         return response.json()
 
     def single_result(self):
@@ -130,6 +174,23 @@ class Query:
 
     def _add_parameter_object(self, name, obj):
         self.parameters[name] = obj.id
+
+    def _add_process_variable(self, name, value, operator="equals"):
+        valid_operators = ("equals", "notEquals", "equalsIgnoreCase",
+                           "notEqualsIgnoreCase", "lessThan", "greaterThan",
+                           "greaterThanOrEquals", "lessThanOrEquals", "like")
+
+        if operator in valid_operators:
+            variable_parameter = {"name": name,
+                                                "value": value,
+                                                "operation": operator}
+            self.variable_parameter.append(variable_parameter)
+        else:
+            raise IncorrectOperator()
+
+
+class IncorrectOperator(Exception):
+    pass
 
 
 class UpdatedSimultaneous(Exception):

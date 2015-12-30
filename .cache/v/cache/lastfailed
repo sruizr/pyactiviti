@@ -1,3 +1,7 @@
 {
+<<<<<<< HEAD
   "tests/test_task_service.py": true
+=======
+  "tests/test_base.py::A_Variables_class::()::should_get_rest_representation_of_differences": true
+>>>>>>> 097012deddc145d9c912aa7b01009960284ab873
 }

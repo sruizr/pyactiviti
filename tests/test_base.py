@@ -5,7 +5,7 @@ from pyactiviti.base import (
                              MissingID,
                              NotFound,
                              UpdatedSimultaneous,
-
+                             Variables,
                              )
 from pyactiviti.process_engine import ActivitiEngine
 
@@ -16,7 +16,6 @@ import pytest
 
 
 class A_Service:
-
     def setup_method(self, method):
         engine = ActivitiEngine("http://localhost:8080/activiti-rest")
         self.service = Service(engine, "service")
@@ -125,4 +124,48 @@ class A_Service:
     def should_post_with_json(self):
         pass
 
+
+class A_Variables_class:
+
+    def setup_method(self, method):
+
+        rest_variables = """[
+                      {
+                        "name" : "doubleTaskVar",
+                        "scope" : "local",
+                        "type" : "double",
+                        "value" : 99.99
+                      },
+                      {
+                        "name" : "stringProcVar",
+                        "scope" : "global",
+                        "type" : "string",
+                        "value" : "This is a ProcVariable"
+                      }
+                    ]"""
+        self.rest_variables = json.loads(rest_variables)
+        self.variables = Variables(rest_data=self.rest_variables)
+
+    def should_load_rest_data(self):
+        assert hasattr(self.variables, "rest_data")
+
+        # Local variables has a underscore at end of variable name
+        assert self.variables["doubleTaskVar_"] == 99.99
+        assert self.variables["stringProcVar"] == "This is a ProcVariable"
+        assert len(self.variables) == 2
+        assert self.rest_variables == self.variables.rest_data
+
+    def should_get_rest_representation_of_differences(self):
+
+        self.variables["newVariable"] = "content"
+        self.variables["localVariable_"] = 123
+
+        rest_result = self.variables.sync_rest()
+        assert len(rest_result) == 2
+        for variable in rest_result:
+            if variable["name"] == "newVariable":
+                assert variable["scope"] == "global"
+            else:
+                assert variable["scope"] == "local"
+                assert variable["name"] == "localVariable"
 
