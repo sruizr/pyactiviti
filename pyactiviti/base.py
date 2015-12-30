@@ -40,15 +40,40 @@ class JavaDictMapper:
 
 class Variables(UserDict):
 
-    def __init__(self, rest_variables=None, **kwargs):
+    def __init__(self, rest_data=None, **kwargs):
+        """rest_data is a dictionary with format of Rest variables"""
         UserDict.__init__(self, **kwargs)
-        if rest_variables:
-            self.rest_data = rest_variables
-        self.load(rest_dict)
+        self.rest_data = None
+        if rest_data:
+            self.load(rest_data)
 
-    def load(self, rest_variables):
-        if rest
-        pass
+    def load(self, rest_data):
+        for variable in rest_data:
+            name = variable["name"]
+            if variable["scope"] == "local":
+                name = name + "_"
+            self.data[name] = variable["value"]
+        self.rest_data = rest_data
+
+    def sync_rest(self):
+        final_data = self.data.copy()
+        final_rest = []
+        for rest_item in self.rest_data:
+            name = rest_item["name"]
+            if rest_item["scope"] == "local":
+                name += "_"
+            if name in final_data:
+                if rest_item["value"] != self.data[name]:
+                    new_item = rest_item.copy()
+                    new_item["value"] = self.data[name]
+                    final_rest.append(new_item)
+
+        for
+
+
+
+
+
 
 
 class Service:
@@ -61,7 +86,7 @@ class Service:
         self.session = engine.session
 
     def create(self, obj, *path):
-        url = self._to_endpoint(path)
+        url = self._to_endpoint(*path)
         values = json.dumps(obj)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
@@ -71,7 +96,7 @@ class Service:
             raise UnknownError()
 
     def update(self, obj, *path):
-        url = self._to_endpoint(path)
+        url = self._to_endpoint(*path)
         values = json.dumps(obj)
         response = self.session.put(url, data=values)
 
@@ -83,7 +108,7 @@ class Service:
             raise UnknownError()
 
     def load(self, *path):
-        url = self._to_endpoint(path)
+        url = self._to_endpoint(*path)
         response = self.session.get(url)
         if response.status_code == codes.not_found:
             raise NotFound()
@@ -93,7 +118,7 @@ class Service:
         return response.json()
 
     def delete(self, *path):
-        url = self._to_endpoint(path)
+        url = self._to_endpoint(*path)
         response = self.session.delete(url)
         if response.status_code == requests.codes.not_found:
             raise NotFound()
@@ -101,7 +126,7 @@ class Service:
             raise UnknownError()
 
     def post_with_json(self, values, *path):
-        url = self._to_endpoint(path)
+        url = self._to_endpoint(*path)
         values = json.dumps(values)
         response = self.session.post(url, data=values)
         # pdb.set_trace()
@@ -111,7 +136,7 @@ class Service:
             raise UnknownError()
 
     def _to_endpoint(self, *args):
-        return '/'.join([self.endpoint] +
+        return '/'.join([self.url] +
                         list(str(arg) for arg in args))
 
 

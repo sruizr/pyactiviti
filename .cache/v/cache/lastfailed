@@ -1,4 +1,3 @@
 {
-  "tests/test_task_service.py::A_TaskQuery::()::should_list_tasks": true,
-  "tests/test_task_service.py::A_TaskService::()::should_load_task": true
+  "tests/test_base.py::A_Variables_class::()::should_get_rest_representation_of_differences": true
 }

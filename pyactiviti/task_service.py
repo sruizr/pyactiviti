@@ -11,7 +11,7 @@ import iso8601
 
 class Task:
 
-    def __init__(self, **camel_case_data=None):
+    def __init__(self, camel_case_data=None):
         if camel_case_data:
             self._parse(camel_case_data)
 
@@ -27,10 +27,9 @@ class Task:
         if hasattr(self.process_instance):
             self.process_instance = self._get_id(self.process_instance)
         if hasattr(self.task_variables):
-
+            pass
         if hasattr(self.process_variables):
-
-
+            pass
 
     @staticmethod
     def _get_id(url):
