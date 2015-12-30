@@ -1,11 +1,4 @@
 from pyactiviti.base import (
-<<<<<<< HEAD
-                             Service,
-                             Query,
-                             JavaDictMapper,
-                             NotFound,
-                             )
-=======
     Service,
     Query,
     JavaDictMapper,
@@ -13,28 +6,10 @@ from pyactiviti.base import (
 )
 import json
 import pdb
->>>>>>> 097012deddc145d9c912aa7b01009960284ab873
 import iso8601
 
 
 class Task:
-<<<<<<< HEAD
-    def __init__(self, id):
-        self.id = id
-
-    def parse(self, dict_task):
-        a = iso8601.
-        JavaDictMapper.update_object(self, dict_task)
-        self.create_time = iso       convert(self.create_time)
-        self.due_date = Task._convert_to_time(self.due_date)
-        self.execution = Task._get_id(self.execution)
-        if self.parent_task:
-            self.parent_task = Task._get_id(self.parent_task)
-        if self.process_instance:
-            self.process_instance = Task._get_id(self.process_instance)
-            Task.
-=======
-
     def __init__(self, camel_case_data=None):
         if camel_case_data:
             self._parse(camel_case_data)
@@ -54,7 +29,6 @@ class Task:
             pass
         if hasattr(self.process_variables):
             pass
->>>>>>> 097012deddc145d9c912aa7b01009960284ab873
 
     @staticmethod
     def _get_id(url):
@@ -74,12 +48,10 @@ class TaskService(Service):
         except NotFound:
             raise TaskNotFound()
 
-<<<<<<< HEAD
-=======
     def claim(self, task, user):
         dict_post = {"action": "claim", "assignee": user.id}
         self.post_with_json(dict_post, "tasks", task.id)
->>>>>>> 097012deddc145d9c912aa7b01009960284ab873
+
 
 class TaskNotFound(NotFound):
     pass
@@ -100,18 +72,15 @@ class TaskQuery(Query):
         self._add_parameter("description", value)
         return self
 
-<<<<<<< HEAD
     def priority(self, operator, value):
-
         self._add_parameter("priority", value)
-=======
+
     def priority(self, value, operator="equals"):
         parameters = {"equals": "priority", "less": "maximumPriority",
                     "greater": "minimumPriority"}
         if operator in parameters:
             self._add_parameter(parameters[operator], value)
         return self
->>>>>>> 097012deddc145d9c912aa7b01009960284ab873
 
     def assignee(self, value):
         if value:
@@ -223,8 +192,6 @@ class TaskQuery(Query):
         json_task_list = json_response["data"]
         task_list = []
         for dict_task in json_task_list:
-            task_list.append( Ta)
+            task_list.append("fff")
 
         return task
-
-

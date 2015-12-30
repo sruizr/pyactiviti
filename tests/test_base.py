@@ -155,7 +155,7 @@ class A_Variables_class:
         assert len(self.variables) == 2
         assert self.rest_variables == self.variables.rest_data
 
-    def should_get_rest_representation_of_differences(self):
+    def should_sync_new_variables(self):
 
         self.variables["newVariable"] = "content"
         self.variables["localVariable_"] = 123

@@ -49,28 +49,34 @@ class Variables(UserDict):
 
     def load(self, rest_data):
         for variable in rest_data:
-            name = variable["name"]
-            if variable["scope"] == "local":
-                name = name + "_"
+            name = self._var_name(variable["name"], variable["scope"])
             self.data[name] = variable["value"]
         self.rest_data = rest_data
 
     def sync_rest(self):
-        final_data = self.data.copy()
-        final_rest = []
-        for rest_item in self.rest_data:
-            name = rest_item["name"]
-            if rest_item["scope"] == "local":
-                name += "_"
-            if name in final_data:
-                if rest_item["value"] != self.data[name]:
-                    new_item = rest_item.copy()
-                    new_item["value"] = self.data[name]
-                    final_rest.append(new_item)
+        result = []
+        dict_rest = {}
+        for item in rest_data:
+            dict_rest[self._var_name(item["name"], item["scope"])] = item
 
-        for
+        # data vs dict_rest
+        for key, value in data:
+            if key not in dict_rest:  # new variable
+                is_local = key[-1] == "_"
+                scope = "local" if is_local else "global"
+                name = key
+                if is_local:
+                        name[-1] = None
+                result.append({"name": name, "scope": scope, "value": value})
 
+        return result
 
+    @staticmethod
+    def _var_name(name, scope):
+        res = name
+        if scope == "local":
+            res += "_"
+        return res
 
 
 
