@@ -8,7 +8,6 @@ class ActivitiEngine:
     def __init__(self, endpoint, auth=('kermit', 'kermit')):
         self.endpoint = endpoint
         self.auth = auth
-
         self.session = requests.Session()
         self.session.auth = self.auth
         self.session.headers.update({'content-type': 'application/json'})

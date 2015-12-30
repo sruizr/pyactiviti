@@ -4,7 +4,7 @@ from pyactiviti.base import (
                              JavaDictMapper,
                              NotFound,
                              )
-import datetime
+import iso8601
 
 
 class Task:
@@ -12,19 +12,16 @@ class Task:
         self.id = id
 
     def parse(self, dict_task):
+        a = iso8601.
         JavaDictMapper.update_object(self, dict_task)
-        self.create_time = Task._convert_to_time(self.create_time)
+        self.create_time = iso       convert(self.create_time)
         self.due_date = Task._convert_to_time(self.due_date)
         self.execution = Task._get_id(self.execution)
         if self.parent_task:
             self.parent_task = Task._get_id(self.parent_task)
         if self.process_instance:
             self.process_instance = Task._get_id(self.process_instance)
-
-    @staticmethod
-    def _convert_to_time(str):
-        str = str[0:len(str)-9]
-        return datetime.datetime.strptime(str, "%Y-%m-%dT%H:%M:%S")
+            Task.
 
     @staticmethod
     def _get_id(url):
@@ -45,7 +42,6 @@ class TaskService(Service):
             raise TaskNotFound()
 
 
-
 class TaskNotFound(NotFound):
     pass
 
@@ -58,9 +54,10 @@ class TaskQuery(Query):
         self._add_parameter_with_like("name", value)
 
     def description(self, value):
+
         self._add_parameter("description", value)
 
-    def priority(self, operator, value ):
+    def priority(self, operator, value):
 
         self._add_parameter("priority", value)
 
