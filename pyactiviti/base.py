@@ -56,18 +56,25 @@ class Variables(UserDict):
     def sync_rest(self):
         result = []
         dict_rest = {}
-        for item in rest_data:
+        for item in self.rest_data:
             dict_rest[self._var_name(item["name"], item["scope"])] = item
 
-        # data vs dict_rest
-        for key, value in data:
+        # looking for new variables
+        for key, value in self.data.items():
             if key not in dict_rest:  # new variable
                 is_local = key[-1] == "_"
                 scope = "local" if is_local else "global"
                 name = key
                 if is_local:
-                        name[-1] = None
+                        name = name[:-1]
                 result.append({"name": name, "scope": scope, "value": value})
+
+        # looking for changes in values
+        for key, value in dict_rest.items():
+            if key in self.data:
+                if value["value"] != self.data[key]:
+                    result.append({"name": key, "scope": value["scope"],
+                                  "value": self.data[key]})
 
         return result
 

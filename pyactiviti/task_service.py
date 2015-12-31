@@ -21,13 +21,13 @@ class Task:
         if hasattr(self, "due_date"):
             self.due_date = iso8601.parse_date(self.due_date)
         self.execution = self._get_id(self.execution)
-        if hasattr(self.parent_self):
-            self.parent_self = self._get_id(self.parent_self)
-        if hasattr(self.process_instance):
+        if hasattr(self, "parent_task"):
+            self.parent_task = self._get_id(self.parent_task)
+        if hasattr(self, "process_instance"):
             self.process_instance = self._get_id(self.process_instance)
-        if hasattr(self.task_variables):
+        if hasattr(self, "task_variables"):
             pass
-        if hasattr(self.process_variables):
+        if hasattr(self, "process_variables"):
             pass
 
     @staticmethod
@@ -44,7 +44,7 @@ class TaskService(Service):
     def load_task(self, task):
         try:
             dict_task = self.load("tasks", task.id)
-            task = Task.parse(dict_task)
+            task = Task(dict_task)
         except NotFound:
             raise TaskNotFound()
 

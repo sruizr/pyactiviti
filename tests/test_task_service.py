@@ -35,7 +35,7 @@ class A_Task:
         dict_task = json.loads(json_task)
         ref_time = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
 
-        task = ts.Task.parse(dict_task)
+        task = ts.Task(dict_task)
         assert task.assignee == "kermit"
         assert task.create_time == ref_time
         assert task.due_date == ref_time
@@ -76,7 +76,7 @@ class A_TaskService:
   "suspended" : false,
   "taskDefinitionKey" : "theTask",
   "url" : "http://localhost:8182/runtime/tasks/8",
-  "tenantId" : null
+  "tenantId" : null,
   "taskVariables": [
         {
           "name": "test",
@@ -90,12 +90,12 @@ class A_TaskService:
           "variableScope": "global",
           "value": "myProcessTest"
         }
-      ],
+      ]
 }"""
         return json.loads(json_task)
 
     def get_task(self):
-        task = ts.Task.parse(self.get_dict_task())
+        task = ts.Task(self.get_dict_task())
 
         return task
 
@@ -106,7 +106,7 @@ class A_TaskService:
     def should_load_task(self, mock_load):
         mock_load.return_value = self.get_dict_task()
 
-        task = ts.Task("8")
+        task = self.get_task()
         self.task_service.load_task(task)
 
         expected_task = self.get_task()
@@ -117,7 +117,8 @@ class A_TaskService:
     def should_raise_exception_when_loading_unexisting_task(self, mock_load):
         mock_load.side_effect = b.NotFound()
 
-        task = ts.Task("10")
+        task = ts.Task()
+        task.id = "10"
         with pytest.raises(ts.TaskNotFound):
             self.task_service.load_task(task)
 

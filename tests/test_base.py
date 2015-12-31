@@ -169,3 +169,10 @@ class A_Variables_class:
                 assert variable["scope"] == "local"
                 assert variable["name"] == "localVariable"
 
+    def should_sync_updated_variables(self):
+        self.variables["stringProcVar"] = "new variable content"
+        rest_result = self.variables.sync_rest()
+
+        assert len(rest_result) == 1
+        assert rest_result[0]["name"] == "stringProcVar"
+        assert rest_result[0]["value"] == "new variable content"
