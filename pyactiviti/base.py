@@ -15,7 +15,7 @@ class JavaDictMapper:
         result = object.__dict__.copy()
         keys = list(result.keys())
         for key in keys:
-            if key[0] == "_":  # internal parameters are not mapped
+            if key[0] == "_":  # internal filters are not mapped
                 result.pop(key)
             else:
                 result[self.to_camel_case(key)] = result.pop(key)
@@ -84,9 +84,6 @@ class Variables(UserDict):
         if scope == "local":
             res += "_"
         return res
-
-
-
 
 
 class Service:
@@ -159,34 +156,34 @@ class Query:
         self.engine = engine
         self.url = engine.rest_url + url_path
         self.session = engine.session
-        self.parameters = {}
-        self.variable_parameter = []
+        self.filters = {}
+        self.variable_filter = []
 
     def count(self):
         pass
 
     def list_get(self):
-        response = self.session.get(self.url, params=self.parameters)
+        response = self.session.get(self.url, params=self.filters)
         return response.json()
 
     def list_post(self):
-        response = self.session.post(self.url, data=self.parameters)
+        response = self.session.post(self.url, data=self.filters)
         return response.json()
 
     def single_result(self):
         pass
 
-    def _add_parameter(self, name, value):
-        self.parameters[name] = value
+    def _add_filter(self, name, value):
+        self.filters[name] = value
 
-    def _add_parameter_with_like(self, name, value):
+    def _add_filter_with_like(self, name, value):
         if "%" in value:
-            self.parameters[name + "Like"] = value
+            self.filters[name + "Like"] = value
         else:
-            self.parameters[name] = value
+            self.filters[name] = value
 
-    def _add_parameter_object(self, name, obj):
-        self.parameters[name] = obj.id
+    def _add_filter_object(self, name, obj):
+        self.filters[name] = obj.id
 
     def _add_process_variable(self, name, value, operator="equals"):
         valid_operators = ("equals", "notEquals", "equalsIgnoreCase",
@@ -194,12 +191,15 @@ class Query:
                            "greaterThanOrEquals", "lessThanOrEquals", "like")
 
         if operator in valid_operators:
-            variable_parameter = {"name": name,
+            variable_filter = {"name": name,
                                                 "value": value,
                                                 "operation": operator}
-            self.variable_parameter.append(variable_parameter)
+            self.variable_filter.append(variable_filter)
         else:
             raise IncorrectOperator()
+
+
+# Errors
 
 
 class IncorrectOperator(Exception):
@@ -218,7 +218,8 @@ class MissingID(Exception):
     pass
 
 
-class AlreadyExists(Exception):
+
+s AlreadyExists(Exception):
     pass
 
 
