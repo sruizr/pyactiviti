@@ -30,7 +30,21 @@ class A_Task:
   "suspended" : false,
   "taskDefinitionKey" : "theTask",
   "url" : "http://localhost:8182/runtime/tasks/8",
-  "tenantId" : null
+  "tenantId" : null,
+  "taskVariables": [
+        {
+          "name": "test",
+          "scope": "local",
+          "value": 99.9
+        }
+      ],
+    "processVariables": [
+        {
+          "name": "processTest",
+          "scope": "global",
+          "value": "myProcessTest"
+        }
+      ]
 }"""
         dict_task = json.loads(json_task)
         ref_time = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
@@ -50,6 +64,9 @@ class A_Task:
         assert task.process_instance == "5"
         assert not task.suspended
         assert not task.tenant_id
+        assert len(task.process_variables) == 1
+        assert task.process_variables["processTest"] == "myProcessTest"
+        assert task.task_variables["test_"] == 99.9
 
 
 class A_TaskService:
@@ -80,14 +97,14 @@ class A_TaskService:
   "taskVariables": [
         {
           "name": "test",
-          "variableScope": "local",
+          "scope": "local",
           "value": "myTest"
         }
       ],
     "processVariables": [
         {
           "name": "processTest",
-          "variableScope": "global",
+          "scope": "global",
           "value": "myProcessTest"
         }
       ]
@@ -141,9 +158,60 @@ class A_TaskQuery(TestQuery):
     def setup_method(self, method):
         engine = ActivitiEngine("http://localhost:8080/rest_engine")
         self.query = ts.TaskQuery(engine)
+        self.json_task_list ="""
+{
+  "data": [
+    {
+      "assignee" : "kermit",
+      "createTime" : "2013-04-17T10:17:43.902+0000",
+      "delegationState" : "pending",
+      "description" : "Task description",
+      "dueDate" : "2013-04-17T10:17:43.902+0000",
+      "execution" : "http://localhost:8182/runtime/executions/5",
+      "id" : "8",
+      "name" : "My task",
+      "owner" : "owner",
+      "parentTask" : "http://localhost:8182/runtime/tasks/9",
+      "priority" : 50,
+      "processDefinition" : "http://localhost:8182/repository/process-definitions/oneTaskProcess%3A1%3A4",
+      "processInstance" : "http://localhost:8182/runtime/process-instances/5",
+      "suspended" : false,
+      "taskDefinitionKey" : "theTask",
+      "url" : "http://localhost:8182/runtime/tasks/8",
+      "tenantId" : null
+    },
+        {
+      "assignee" : "fozzy",
+      "createTime" : "2013-04-17T10:17:43.902+0000",
+      "delegationState" : "pending",
+      "description" : "Task description",
+      "dueDate" : "2013-04-17T10:17:43.902+0000",
+      "execution" : "http://localhost:8182/runtime/executions/5",
+      "id" : "9",
+      "name" : "My task",
+      "owner" : "owner",
+      "parentTask" : "http://localhost:8182/runtime/tasks/9",
+      "priority" : 100,
+      "processDefinition" : "http://localhost:8182/repository/process-definitions/oneTaskProcess%3A1%3A4",
+      "processInstance" : "http://localhost:8182/runtime/process-instances/6",
+      "suspended" : true,
+      "taskDefinitionKey" : "theTask",
+      "url" : "http://localhost:8182/runtime/tasks/9",
+      "tenantId" : null,
+      "processVariables": null
+    }
+
+  ],
+  "total": 2,
+  "start": 0,
+  "sort": "name",
+  "order": "asc",
+  "size": 2
+}"""
+        self.json_task_list = json.loads(self.json_task_list)
 
     def should_be_initialized_with_service(self):
-        assert not self.query.parameters
+        assert not self.query.filters
         assert self.query.url == "http://localhost:8080/rest_engine/query/tasks"
 
     def should_add_parameters_to_task(self):
@@ -162,8 +230,8 @@ class A_TaskQuery(TestQuery):
         self.test_parameter_with_like(query.assignee, "assignee", "sRuiz")
 
         q = query.assignee(None)
-        assert q.parameters["unassigned"] == True
-        q.parameters.pop("unassigned")
+        assert q.filters["unassigned"] == True
+        q.filters.pop("unassigned")
 
         self.test_parameter_with_like(query.owner, "owner", "sRuiz")
         self.test_parameter(query.delegation_state, "delegationState",
@@ -171,15 +239,15 @@ class A_TaskQuery(TestQuery):
         self.test_parameter(query.delegation_state, "delegationState",
                             "resolved")
         q = query.delegation_state("nostate")
-        assert "unassigned" not in q.parameters
+        assert "unassigned" not in q.filters
 
         self.test_parameter(query.candidate_user, "candidateUser",
                             "sRuiz")
         self.test_parameter(query.candidate_group, "candidateGroup",
                             "testGroup")
         q = query.candidate_group("group1", "group2")
-        assert q.parameters["candidateGroups"] == "group1, group2"
-        q.parameters.pop("candidateGroups")
+        assert q.filters["candidateGroups"] == "group1, group2"
+        q.filters.pop("candidateGroups")
 
         self.test_parameter(query.involved_user, "involvedUser", "sRuiz")
         self.test_parameter_with_like(query.task_definition_key,
@@ -198,30 +266,30 @@ class A_TaskQuery(TestQuery):
 
         a_date = iso8601.parse_date("2013-04-17T10:17:43.902+0000")
         q = query.created_date(a_date)
-        assert iso8601.parse_date(q.parameters["createdOn"]) == a_date
-        q.parameters.pop("createdOn")
+        assert iso8601.parse_date(q.filters["createdOn"]) == a_date
+        q.filters.pop("createdOn")
 
         q = query.created_date(a_date, "before")
-        assert iso8601.parse_date(q.parameters["createdBefore"]) == a_date
-        q.parameters.pop("createdBefore")
+        assert iso8601.parse_date(q.filters["createdBefore"]) == a_date
+        q.filters.pop("createdBefore")
 
         q = query.created_date(a_date, "after")
-        assert iso8601.parse_date(q.parameters["createdAfter"]) == a_date
-        q.parameters.pop("createdAfter")
+        assert iso8601.parse_date(q.filters["createdAfter"]) == a_date
+        q.filters.pop("createdAfter")
 
         q = query.due_date(None)
-        assert q.parameters.pop("withoutDueDate") == True
+        assert q.filters.pop("withoutDueDate") == True
 
         q = query.due_date(a_date)
-        assert iso8601.parse_date(q.parameters["dueOn"]) == a_date
-        q.parameters.pop("dueOn")
+        assert iso8601.parse_date(q.filters["dueOn"]) == a_date
+        q.filters.pop("dueOn")
 
         q = query.due_date(a_date, "before")
-        assert iso8601.parse_date(q.parameters["dueBefore"]) == a_date
-        q.parameters.pop("dueBefore")
+        assert iso8601.parse_date(q.filters["dueBefore"]) == a_date
+        q.filters.pop("dueBefore")
 
         q = query.due_date(a_date, "after")
-        assert iso8601.parse_date(q.parameters.pop("dueAfter")) == a_date
+        assert iso8601.parse_date(q.filters.pop("dueAfter")) == a_date
 
         self.test_parameter_flag(query.exclude_subtasks, "excludeSubTasks")
         self.test_parameter_flag(query.active, "active")
@@ -232,15 +300,20 @@ class A_TaskQuery(TestQuery):
 
         self.test_parameter_with_like(query.tenant_id, "tenantId", "tenant")
         query = query.tenant_id(None)
-        assert query.parameters.pop("withoutTenantId") == True
+        assert query.filters.pop("withoutTenantId") == True
 
         self.test_parameter(query.candidate_or_assigned, "candidateOrAssigned",
                             "sRuiz")
 
     @patch("pyactiviti.task_service.Query.list_post")
     def should_list_tasks(self, mock_list_post):
-        self.query.list()
-        mock_list_post.return_value = 12
 
+        self.query.process_definition_name("ProcessTestName")
+        self.query.include_process_variables()
 
+        mock_list_post.return_value = self.json_task_list
 
+        task_list = self.query.list()
+        assert len(task_list) == 2
+        assert type(task_list[0]) == ts.Task
+        mock_list_post.assert_any_call()

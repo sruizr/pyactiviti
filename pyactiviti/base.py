@@ -219,7 +219,7 @@ class MissingID(Exception):
 
 
 
-s AlreadyExists(Exception):
+class AlreadyExists(Exception):
     pass
 
 

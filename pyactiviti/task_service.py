@@ -3,6 +3,7 @@ from pyactiviti.base import (
     Query,
     JavaDictMapper,
     NotFound,
+    Variables,
 )
 import json
 import pdb
@@ -26,9 +27,9 @@ class Task:
         if hasattr(self, "process_instance"):
             self.process_instance = self._get_id(self.process_instance)
         if hasattr(self, "task_variables"):
-            pass
+            self.task_variables = Variables(self.task_variables)
         if hasattr(self, "process_variables"):
-            pass
+            self.process_variables = Variables(self.process_variables)
 
     @staticmethod
     def _get_id(url):
@@ -75,17 +76,17 @@ class TaskQuery(Query):
         self._add_filter_("priority", value)
 
     def priority(self, value, operator="equals"):
-        parameters = {"equals": "priority", "less": "maximumPriority",
+        filters = {"equals": "priority", "less": "maximumPriority",
                     "greater": "minimumPriority"}
-        if operator in parameters:
-            self._add_filter(parameters[operator], value)
+        if operator in filters:
+            self._add_filter(filters[operator], value)
         return self
 
     def assignee(self, value):
         if value:
             self._add_filter_with_like("assignee", value)
         else:
-            self.parameters["unassigned"] = True
+            self.filters["unassigned"] = True
         return self
 
     def owner(self, value):
@@ -103,9 +104,9 @@ class TaskQuery(Query):
 
     def candidate_group(self, *args):
         if len(args) == 1:
-            self.parameters["candidateGroup"] = args[0]
+            self.filters["candidateGroup"] = args[0]
         else:
-            self.parameters["candidateGroups"] = ", ".join(args)
+            self.filters["candidateGroups"] = ", ".join(args)
         return self
 
     def involved_user(self, value):
@@ -121,6 +122,7 @@ class TaskQuery(Query):
         return self
 
     def process_instance_business_key(self, value):
+
         self._add_filter_with_like("processInstanceBusinessKey", value)
         return self
 
@@ -137,20 +139,20 @@ class TaskQuery(Query):
         return self
 
     def created_date(self, value, operator="on"):
-        parameters = {"on": "createdOn", "before": "createdBefore",
+        filters = {"on": "createdOn", "before": "createdBefore",
                                 "after": "createdAfter"}
-        if operator in parameters:
+        if operator in filters:
             str_date = value.isoformat()
-            self._add_filter(parameters[operator], str_date)
+            self._add_filter(filters[operator], str_date)
         return self
 
     def due_date(self, value, operator="on"):
         if value:
-            parameters = {"on": "dueOn", "before": "dueBefore",
+            filters = {"on": "dueOn", "before": "dueBefore",
                                     "after": "dueAfter"}
-            if operator in parameters:
+            if operator in filters:
                 str_date = value.isoformat()
-                self._add_filter(parameters[operator], str_date)
+                self._add_filter(filters[operator], str_date)
         else:
             self._add_filter("withoutDueDate", True)
         return self
@@ -185,11 +187,15 @@ class TaskQuery(Query):
     def list(self):
         data_request = self.filters.copy()
         if self.variable_filter:
-            data_request["processInstanceVariables"] = self.variable_filter(values = json.dumps(data_request)
-        json_response = self.session.post(self.url, data=values).json()
+            data_request["processInstanceVariables"] = self.variable_filter
+
+        values = json.dumps(data_request)
+        json_response = self.list_post()
+
         json_task_list = json_response["data"]
         task_list = []
-        for dict_task in json_task_list:
-            task_list.append("fff")
 
-        return task
+        for item in json_task_list:
+            task_list.append(Task(item))
+
+        return task_list
