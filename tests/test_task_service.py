@@ -152,6 +152,38 @@ class A_TaskService:
         dict_post = {"action": "claim", "assignee": "userId"}
         mock_post.assert_called_with(dict_post, "tasks", task.id)
 
+    @patch("pyactiviti.task_service.Service.post_with_json")
+    def should_complete_a_task(self, mock_post):
+
+        task = self.get_task()
+        task.process_variables["newVariableTest"] = 1234
+        task.task_variables["otherVar_"] = 567
+        self.task_service.complete(task)
+
+        dict_post = {"action": "complete", "variables": [{
+                                "name": "newVariableTest",
+                                "value": 1234, "scope": "global"
+                                },
+                                {
+                                "name": "otherVar",
+                                "value": 567,
+                                "scope": "local"
+                                }]}
+        mock_post.assert_called_with(dict_post, "tasks", task.id)
+
+    @patch("pyactiviti.task_service.Service.post_with_json")
+    def should_add_comment(self, mock_post):
+        task = Mock()
+        task.id = "8"
+        dict_comment = {"message": "This is a comment on the task.",
+                                        "saveProcessInstanceId": True}
+
+        self.task_service.add_comment(task, "This a comment on the task.")
+        mock_post.assert_called_with(dict_comment, "tasks", task.id,
+                                     "comments")
+
+    def should_add_attachment_to_task(self, mock_post):
+
 
 class A_TaskQuery(TestQuery):
 

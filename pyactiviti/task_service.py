@@ -53,6 +53,16 @@ class TaskService(Service):
         dict_post = {"action": "claim", "assignee": user.id}
         self.post_with_json(dict_post, "tasks", task.id)
 
+    def complete(self, task):
+        variables = task.process_variables.sync_rest()
+        variables += task.task_variables.sync_rest()
+        dict_post = {"action": "complete", "variables": variables}
+        self.post_with_json(dict_post, "tasks", task.id)
+
+    def add_comment(self, task, message):
+        dict_message = {"message": message, "saveProcessInstanceId": True}
+        self.post_with_json(dict_message, "tasks", task.id, "comments")
+
 
 class TaskNotFound(NotFound):
     pass
