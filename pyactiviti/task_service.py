@@ -31,10 +31,16 @@ class Task:
         if hasattr(self, "process_variables"):
             self.process_variables = Variables(self.process_variables)
 
+
     @staticmethod
     def _get_id(url):
         tokens = url.split("/")
         return tokens[-1]
+
+
+class Comment:
+    def __init__(self, task, process_instance=None):
+        self.task_id = task.id
 
 
 class TaskService(Service):
@@ -59,9 +65,25 @@ class TaskService(Service):
         dict_post = {"action": "complete", "variables": variables}
         self.post_with_json(dict_post, "tasks", task.id)
 
+    def create_task_query(self):
+        task_query = TaskQuery(self)
+        return task_query
+
     def add_comment(self, task, message):
         dict_message = {"message": message, "saveProcessInstanceId": True}
         self.post_with_json(dict_message, "tasks", task.id, "comments")
+
+    def delegate_task(self, task, user):
+        pass
+
+    def get_attachment(self, task, attachment):
+        pass
+
+    def get_comments(self, task):
+        pass
+
+    def get_variables(self, task, variable_names):
+        pass
 
 
 class TaskNotFound(NotFound):
@@ -81,9 +103,6 @@ class TaskQuery(Query):
     def description(self, value):
         self._add_filter("description", value)
         return self
-
-    def priority(self, operator, value):
-        self._add_filter_("priority", value)
 
     def priority(self, value, operator="equals"):
         filters = {"equals": "priority", "less": "maximumPriority",

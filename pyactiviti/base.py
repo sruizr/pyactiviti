@@ -136,7 +136,7 @@ class Service:
             raise UnknownError()
 
     def post_with_json(self, values, *path):
-        url = self._to_endpoint(*path)
+        url = self._to_endpoint(path)
         values = json.dumps(values)
         response = self.session.post(url, data=values)
         # pdb.set_trace()

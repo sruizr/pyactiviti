@@ -178,11 +178,12 @@ class A_TaskService:
         dict_comment = {"message": "This is a comment on the task.",
                                         "saveProcessInstanceId": True}
 
-        self.task_service.add_comment(task, "This a comment on the task.")
+        self.task_service.add_comment(task, "This is a comment on the task.")
         mock_post.assert_called_with(dict_comment, "tasks", task.id,
                                      "comments")
 
-    def should_add_attachment_to_task(self, mock_post):
+    def it_should_add_attachment_to_task(self, mock_post):
+        pass
 
 
 class A_TaskQuery(TestQuery):
@@ -190,8 +191,7 @@ class A_TaskQuery(TestQuery):
     def setup_method(self, method):
         engine = ActivitiEngine("http://localhost:8080/rest_engine")
         self.query = ts.TaskQuery(engine)
-        self.json_task_list ="""
-{
+        self.json_task_list = """{
   "data": [
     {
       "assignee" : "kermit",
@@ -310,7 +310,7 @@ class A_TaskQuery(TestQuery):
         q.filters.pop("createdAfter")
 
         q = query.due_date(None)
-        assert q.filters.pop("withoutDueDate") == True
+        assert q.filters.pop("withoutDueDate")
 
         q = query.due_date(a_date)
         assert iso8601.parse_date(q.filters["dueOn"]) == a_date
