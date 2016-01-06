@@ -29,5 +29,5 @@ class RuntimeService(Service):
     def signal(execution, variables=None):
         pass
 
-    def start_process_instance(self, variables):
+    def start_process_instance(self, process_definition, variables=None):
         pass
